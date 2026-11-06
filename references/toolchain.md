@@ -113,7 +113,18 @@ powershell -File scripts\close_tab_uia.ps1 -TitleLike "*复习讲义*"
 
 ---
 
-## 三、通义听悟
+## 三、通义听悟（必须经 Tabbit 浏览器操作）
+
+**硬约束：转写一律在 Tabbit 浏览器里打开通义听悟完成**。不要用 Windows-MCP 手动点击，也不要用本地 whisper。
+
+```powershell
+# 建任务 -> 打开听悟 -> 上传音频
+tabbit-cli create --task "听悟"
+tabbit-cli nodejs --task "听悟" --request-id "tw-up-01" --timeout-ms 120000 < scripts\js\tingwu_upload.js
+
+# 点「开始转写」
+tabbit-cli nodejs --task "听悟" --request-id "tw-start-01" --timeout-ms 60000 < scripts\js\tingwu_start.js
+```
 
 | 项 | 值 |
 |---|---|
@@ -131,10 +142,26 @@ powershell -File scripts\close_tab_uia.ps1 -TitleLike "*复习讲义*"
 - `GET` → `405 Method Not Allowed`，必须 POST
 - `{"transIds":[...]}` → `TRS.InvalidTrans`，必须单个 `transId`
 - 直接读 `innerText` → 只有几千字（虚拟列表）
+- 上传后不点「开始转写」→ 永远排队
+- 单文件超过 60 分钟容易排队失败 → 抽音频时切段，转写后按时间偏移合并
 
 ---
 
-## 四、Motrix / aria2 JSON-RPC
+## 四、Motrix（视频下载的唯一主路径）
+
+**硬约束：拿到视频直链后，把链接粘贴进 Motrix 下载**。不要用浏览器单线程、也不要自写下载器当主路径。
+
+### 4.1 图形界面操作（默认）
+
+1. 复制直链（带 `auth_key` 的完整 URL）；
+2. 打开 Motrix；
+3. `Ctrl+N` 或点「+」→「新建任务」；
+4. 粘贴链接（Motrix 通常自动检测剪贴板并弹窗，点「确定」）；
+5. 「保存到」选课程视频目录；
+6. 文件名按命名约定填写；
+7. 提交，确认连接数 8、速度爬升。
+
+### 4.2 aria2 JSON-RPC（脚本化）
 
 ```text
 POST http://127.0.0.1:16800/jsonrpc
@@ -155,6 +182,12 @@ Content-Type: application/json
 ```json
 {"split":"8","max-connection-per-server":"8","min-split-size":"8M"}
 ```
+
+### 4.3 速度与校验
+
+- 实测同一源站：单线程 0.5 MB/s → Motrix 8 连接 3–5 MB/s。
+- 下载完必须 `ffprobe` 校验时长与大小，并抽样确认非全零。
+- 只有 Motrix 不可用且用户明确同意时，才退回 `scripts/download_chunked.py`。
 
 ---
 

@@ -68,7 +68,8 @@ def fix_terms(text: str) -> tuple[str, dict]:
 
 def merge_fragments(lines: list[str]) -> list[str]:
     """把被切成碎句的行合并：原文格式为 'MM:SS\\t文本'。"""
-    pat = re.compile(r"^\s*(?:\[?)(\d{1,2}):(\d{2})(?:\]?)[\s\t]+(.*)$")
+    # 分钟数允许 1–3 位：超过 100 分钟的课会出现 100:13 这种时间戳
+    pat = re.compile(r"^\s*(?:\[?)(\d{1,3}):(\d{2})(?:\]?)[\s\t]+(.*)$")
     merged = []  # [(start_sec, end_sec, text)]
     for ln in lines:
         m = pat.match(ln)

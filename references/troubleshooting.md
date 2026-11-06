@@ -20,19 +20,38 @@ python -c "f=open(r'<文件>','rb');f.seek(<size>//2);d=f.read(1048576);print(ro
 
 **根因**：用 `f.truncate(total)` 预分配后单线程顺序写，中途异常但文件大小已经是最终值，看起来"下完了"。
 
-**处置**：删掉重下，改用 8 MB 分块 + 每块独立 Range + 状态文件。用 `scripts/download_chunked.py`，只有输出 `ALL_OK` 才算成功。
+**处置**：删掉，把直链重新粘贴进 Motrix 重下（8 连接）。不要试图修补空洞文件。只有 Motrix 不可用且用户明确同意时，才用 `scripts/download_chunked.py`（8 MB 分块 + 每块独立 Range + 状态文件，输出 `ALL_OK` 才算成功）。
 
 ### 不支持 Range
 
 **症状**：`curl -sI -H "Range: bytes=0-1"` 返回 `200` 而不是 `206`，响应头没有 `Content-Range`。
 
-**处置**：只能单线程下载。仍用 `download_chunked.py` 但并发数设 1，或改用 `curl -C -` 断点续传。
+**处置**：只能单线程下载。在 Motrix 里把该任务的连接数设为 1（或直接用 `curl -C -` 断点续传），不要开 8 连接——服务器会忽略 Range，实际仍按单线程跑。
 
 ### aria2 任务一直 `active` 但不增长
 
 **判据**：`aria2.tellStatus` 里 `connections` 为 0 且 `errorCode` 有值（常见 22 = HTTP 响应头异常，可能签名过期）。
 
 **处置**：重新取直链（签名通常几小时过期），删旧任务重建。
+
+### Motrix 粘贴链接后没反应
+
+**判据**：Motrix「正在下载」里没有新任务，或任务瞬间变成「已停止」。
+
+**处置**：
+- 确认粘贴的是**完整直链**（含 `?auth_key=...`），不要少了 query；
+- 确认链接没有过期（重新从播放页取一次）；
+- 链接里有 `&` 时，图形界面直接粘贴没问题，走 PowerShell 时要用引号包住；
+- 若 Motrix 开了「剪贴板监控」，关掉再手动新建任务，避免重复弹窗。
+
+### Motrix 速度上不去
+
+**判据**：`aria2.tellStatus` 里 `connections < 8` 或 `downloadSpeed` 长期低于 1 MB/s。
+
+**处置**：
+- 源站不支持 Range 时多连接无效，改单连接（见上一条）；
+- 检查是否被本机其他下载占满带宽；
+- 换 `min-split-size` 为 `8M`、`split` 为 `8`，不要开 16 以上，源站常限单 IP 连接数。
 
 ---
 
@@ -179,3 +198,51 @@ open("out.txt", "w", encoding="utf-8").write(text)
 **症状**：`task.expired`。
 
 **处置**：90 秒无操作会释放所有权（标签保留）。重新用同名任务 + 新 `request-id` 即可继续，不需要重建页面。
+
+---
+
+## 七、HTML 排版与 A4 打印
+
+> 更完整的规范见 [html-layout.md](html-layout.md)。
+
+### PDF 里底纹、色块全变白
+
+**根因**：Playwright 打印没开 `printBackground`，或 CSS 没写 `print-color-adjust: exact`。
+
+**处置**：`page.pdf({printBackground: true, ...})`，并在 CSS 里给 `*` 加 `-webkit-print-color-adjust: exact; print-color-adjust: exact;`。
+
+### 公式位置一片空白 / 还是 `\(...\)` 原文
+
+**根因**：没等 MathJax 渲染完就打印。
+
+**处置**：`await page.evaluate(() => MathJax.startup.promise)` 之后再 `page.pdf()`；行间公式确认用的是 `\[...\]`。
+
+### 公式放大后是空心轮廓 / 毛边
+
+**根因**：MathJax 用了 `tex-svg.js`（字形是路径），Chromium 打印时加了同色发丝描边；或页面里有 `-webkit-text-stroke`。
+
+**处置**：换 `tex-chtml.js`；全站搜 `text-stroke`、`paint-order: stroke`、`text-shadow` 并删除。用 `check_pdf.py --style html-*` 看 `text_strokes` 是否为 0。
+
+### 每一页都重复同一个页眉，或页眉错位
+
+**根因**：用 `position: fixed` 做页眉页脚。
+
+**处置**：改用 Playwright 的 `displayHeaderFooter` + `headerTemplate` / `footerTemplate`；Chromium 命令行模式改用 `@page` 边距 + 打印后加页码。
+
+### 目录页码全错
+
+**根因**：用 `offsetTop` 粗算，但文档里有封面色块、强制分页或浮动元素。
+
+**处置**：第一遍打印后，用 `pymupdf` 逐页搜索标题文本得到真实页码，再回填目录打第二遍；交付前抽查前 5 条。
+
+### 黑白版打印出来有颜色
+
+**根因**：CSS 里残留彩色变量，或嵌入了彩色 SVG / emoji。
+
+**处置**：`check_pdf.py --style html-bw` 看 `color_pages`；逐页排查 `#1d4ed8` 这类彩色值、彩色 emoji、彩色 SVG 填充。
+
+### 内容被裁掉 / 右侧溢出
+
+**根因**：`body { overflow: hidden }`、固定高度、或长公式没有换行。
+
+**处置**：删掉 `overflow: hidden` 和固定高度；长公式用 `aligned` 换行；`check_pdf.py` 的 `text_outside_page` 必须为 0。

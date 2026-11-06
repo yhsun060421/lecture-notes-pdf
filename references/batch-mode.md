@@ -7,7 +7,7 @@
 ## 一、正确的批量节奏
 
 ```
-全部课程  ──▶ [A] 批量取直链 + 批量下载（并发 4–8）
+全部课程  ──▶ [A] 批量取直链 + 批量丢进 Motrix（每任务 8 连接，同时 2–3 个）
                     ↓
                 [B] 批量抽音频 + 逐节上传听悟（上传串行，转写并行）
                     ↓
@@ -33,6 +33,7 @@
   "video_url": "https://...",
   "video_path": "C:\\Users\\<你>\\Videos\\课程合并\\数据科学与工程数学基础-第8周周二.mp4",
   "video_size": 885483291,
+  "style": "html-color",
   "download": "done",
   "transcribe": "done",
   "trans_id": "klrbn2oozrxbq5zy",
@@ -145,7 +146,9 @@ def save(st):
 def step_download(st):
     if st.get("download") == "done":
         return
-    subprocess.run([PY, "-I", "scripts/download_chunked.py", st["video_url"], st["video_path"], "8"], check=False)
+    # 硬约束：走 Motrix 的 aria2 RPC（图形界面等价于把直链粘贴进 Motrix）
+    add_motrix_task(st["video_url"], st["video_path"], split=8)
+    wait_motrix_done(st["video_path"])
     # 校验通过才置 done
     st["download"] = "done"
     save(st)

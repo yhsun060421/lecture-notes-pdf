@@ -16,3 +16,6 @@ scripts/js/_stage_*.js
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# 单次任务的临时工作区
+work_course/
