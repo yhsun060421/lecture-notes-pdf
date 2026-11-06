@@ -33,8 +33,16 @@ import json
 import os
 import re
 import subprocess
+import sys
 import time
 from urllib.parse import quote
+
+# Windows 控制台默认 GBK，打印会话摘要里的特殊字符会直接崩
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001
+        pass
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 JS_DIR = os.path.join(HERE, "js")
@@ -47,6 +55,7 @@ PROMPTS = {
 }
 
 JS_STEP1 = r"""const LESSON = __LESSON__;
+const TXTNAME = __TXTNAME__;
 const TXT = __TXT__;
 const REFS = __REFS__;
 const p = await context.newPage();
@@ -87,17 +96,19 @@ async function uploadOne(files) {
 
 const base = f => f.replace(/\\/g, "/").split("/").pop();
 const first = await uploadOne([TXT].concat(REFS));
-let body = await p.evaluate(() => (document.body.innerText || "").slice(0, 1500));
+const full = () => p.evaluate(() => document.body.innerText || "");
+let body = await full();
 const missing = REFS.filter(f => !body.includes(base(f)));
 for (const one of missing) {
   await uploadOne([one]);
-  body = await p.evaluate(() => (document.body.innerText || "").slice(0, 1500));
+  body = await full();
 }
-return {url: p.url(), uploaded: first, hasTxt: body.includes(LESSON + ".txt"),
-        refs: REFS.map(f => [base(f), body.includes(base(f))]), body};
+return {url: p.url(), uploaded: first, hasTxt: body.includes(TXTNAME),
+        refs: REFS.map(f => [base(f), body.includes(base(f))]), body: body.slice(0, 900)};
 """
 
 JS_STEP2 = r"""const LESSON = __LESSON__;
+const TXTNAME = __TXTNAME__;
 const VIDEO = __VIDEO__;
 const TITLE = __TITLE__;
 const KEY = __KEY__;
@@ -108,7 +119,7 @@ const news = context.pages().filter(x => x.url().includes("web.tabbit.com") && x
 let p = null;
 for (const c of news) {
   try { const b = await c.evaluate(() => document.body.innerText || "");
-        if (b.includes(LESSON + ".txt") && !b.includes(TITLE)) { p = c; break; } } catch (e) {}
+        if (b.includes(TXTNAME) && !b.includes(TITLE)) { p = c; break; } } catch (e) {}
 }
 if (!p && news.length) p = news[0];
 if (!p) return {err: "composer page missing"};
@@ -136,11 +147,12 @@ return {refOk, lastErr, hasMp4: body.includes(TITLE), body};
 """
 
 JS_STEP3 = r"""const LESSON = __LESSON__;
+const TXTNAME = __TXTNAME__;
 const B64 = __B64__;
 const news = context.pages().filter(x => x.url().includes("web.tabbit.com") && x.url().includes("newtab"));
 let p = null;
 for (const c of news) {
-  try { const b = await c.evaluate(() => document.body.innerText || ""); if (b.includes(LESSON + ".txt")) { p = c; break; } } catch (e) {}
+  try { const b = await c.evaluate(() => document.body.innerText || ""); if (b.includes(TXTNAME)) { p = c; break; } } catch (e) {}
 }
 if (!p && news.length) p = news[0];
 if (!p) return {err: "composer page missing"};
@@ -218,6 +230,8 @@ def main() -> None:
     ap.add_argument("--out-name", default="", help="交付 PDF 文件名，默认 <课程>_<讲次>.pdf")
     ap.add_argument("--task", default="课程讲义")
     ap.add_argument("--video-title", default="", help="引用区显示的视频标题，默认取视频文件名")
+    ap.add_argument("--steps", default="123",
+                    help="执行哪几步，默认 123。上一轮某步失败时用 --steps 23 续跑，不重复开新标签")
     args = ap.parse_args()
 
     lesson = args.lesson
@@ -249,25 +263,34 @@ def main() -> None:
 
     b64 = base64.b64encode(prompt.encode("utf-8")).decode("ascii")
     tag = time.strftime("%m%d%H%M")
-    slug = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", "", lesson)[-12:] or "lesson"
+    # requestId \u5fc5\u987b\u662f\u8def\u5f84\u5b89\u5168\u7684 ASCII\uff0c\u4e2d\u6587\u8bfe\u6b21\u540d\u4e00\u5f8b\u9000\u5316\u4e3a lesson
+    slug = re.sub(r"[^0-9A-Za-z]+", "", lesson)[-12:] or "lesson"
 
+    steps = args.steps
     js1 = JS_STEP1.replace("__LESSON__", json.dumps(lesson, ensure_ascii=False)).replace(
+        "__TXTNAME__", json.dumps(txt_name, ensure_ascii=False)).replace(
         "__TXT__", json.dumps(txt, ensure_ascii=False)).replace(
         "__REFS__", json.dumps(refs, ensure_ascii=False))
-    r1 = run_js("1", js1, args.task, f"st1-{slug}-{tag}", 120000)
-    print("STEP1", json.dumps(r1.get("result", {}).get("value", r1), ensure_ascii=False)[:500])
-
     js2 = JS_STEP2.replace("__LESSON__", json.dumps(lesson, ensure_ascii=False)).replace(
+        "__TXTNAME__", json.dumps(txt_name, ensure_ascii=False)).replace(
         "__VIDEO__", json.dumps(video_url, ensure_ascii=False)).replace(
         "__TITLE__", json.dumps(title, ensure_ascii=False)).replace(
         "__KEY__", json.dumps(key, ensure_ascii=False))
-    r2 = run_js("2", js2, args.task, f"st2-{slug}-{tag}", 150000)
-    print("STEP2", json.dumps(r2.get("result", {}).get("value", r2), ensure_ascii=False)[:500])
-
     js3 = JS_STEP3.replace("__LESSON__", json.dumps(lesson, ensure_ascii=False)).replace(
+        "__TXTNAME__", json.dumps(txt_name, ensure_ascii=False)).replace(
         "__B64__", json.dumps(b64))
-    r3 = run_js("3", js3, args.task, f"st3-{slug}-{tag}", 120000)
-    print("STEP3", json.dumps(r3.get("result", {}).get("value", r3), ensure_ascii=False)[:500])
+
+    if "1" in steps:
+        r1 = run_js("1", js1, args.task, f"st1-{slug}-{tag}", 120000)
+        print("STEP1", json.dumps(r1.get("result", {}).get("value", r1), ensure_ascii=False)[:500])
+        if not (r1.get("result", {}).get("value") or {}).get("hasTxt"):
+            raise SystemExit("STEP1 未成功上传语音稿，终止")
+    if "2" in steps:
+        r2 = run_js("2", js2, args.task, f"st2-{slug}-{tag}", 150000)
+        print("STEP2", json.dumps(r2.get("result", {}).get("value", r2), ensure_ascii=False)[:500])
+    if "3" in steps:
+        r3 = run_js("3", js3, args.task, f"st3-{slug}-{tag}", 120000)
+        print("STEP3", json.dumps(r3.get("result", {}).get("value", r3), ensure_ascii=False)[:500])
     print("\n提交完成。下一步：记录会话 URL，用文件库接口轮询 PDF 产物。")
 
 
