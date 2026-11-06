@@ -117,6 +117,10 @@ def main() -> None:
             # 纵向判定全是误报；横向溢出才是真正会把内容裁掉的失败模式。
             for w in p.get_text("words"):
                 x0, _, x1, _ = w[:4]
+                # MathJax 的可伸缩定界符（MATH 字体的私用区码位 U+E1xx）在
+                # pymupdf 里 bbox 会拉到 ±1000 以上，宽过整页，纯属误报。
+                if not w[4].strip() or (x1 - x0) > r.width or abs(x0) > 2 * r.width:
+                    continue
                 if x0 < r.x0 - 2 or x1 > r.x1 + 2:
                     outside += 1
         lines.append(f"images={images} (应为 0，插图均为内联 SVG)")
