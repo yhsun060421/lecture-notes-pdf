@@ -28,11 +28,17 @@ BAD = [
     "航列式", "转旨", "正订", "范书", "矩正", "象量", "二词型",
 ]
 
-STROKE_RE = re.compile(rb"(?<![A-Za-z])(S|s|B|B\*|b|b\*)(?![A-Za-z*])")
+STROKE_OPS = {b"S", b"s", b"B", b"b", b"B*", b"b*"}
+STR_RE = re.compile(rb"\([^)]*\)")   # 字符串字面量里的 S/B 不算算子
+HEX_RE = re.compile(rb"<[^>]*>")
 
 
 def count_text_strokes(doc, page):
-    """统计页面内容流里文字块（BT…ET）内的描边算子数量。"""
+    """统计页面内容流里文字块（BT…ET）内的描边算子数量。
+
+    先剔除字符串与十六进制串，再按 token 精确比对，避免把文本内容里的
+    字母 S/B 误当成绘图算子。
+    """
     n = 0
     for x in page.get_contents() or []:
         try:
@@ -40,7 +46,9 @@ def count_text_strokes(doc, page):
         except Exception:  # noqa: BLE001
             continue
         for seg in re.findall(rb"BT(.*?)ET", data, re.S):
-            n += len(STROKE_RE.findall(seg))
+            seg = STR_RE.sub(b" ", seg)
+            seg = HEX_RE.sub(b" ", seg)
+            n += sum(1 for tok in seg.split() if tok in STROKE_OPS)
     return n
 
 
@@ -105,9 +113,11 @@ def main() -> None:
         outside = 0
         for p in doc:
             r = p.rect
-            for b in p.get_text("blocks"):
-                x0, y0, x1, y1 = b[:4]
-                if x0 < r.x0 - 2 or y0 < r.y0 - 2 or x1 > r.x1 + 2 or y1 > r.y1 + 2:
+            # 只查横向越界：MathJax 的可伸缩括号在 pymupdf 里 bbox 会异常拉长，
+            # 纵向判定全是误报；横向溢出才是真正会把内容裁掉的失败模式。
+            for w in p.get_text("words"):
+                x0, _, x1, _ = w[:4]
+                if x0 < r.x0 - 2 or x1 > r.x1 + 2:
                     outside += 1
         lines.append(f"images={images} (应为 0，插图均为内联 SVG)")
         lines.append(f"text_strokes={strokes} (应为 0)")
