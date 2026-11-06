@@ -52,10 +52,16 @@ HTML / LaTeX 都是中间产物，必须在沙箱里编译或打印成 PDF，只
 | 彩色 HTML | `scripts/prompt_html_color.txt` | Chromium 打印的 A4 彩色 PDF |
 | 黑白 HTML | `scripts/prompt_html_bw.txt` | Chromium 打印的 A4 黑白 PDF |
 
-**HTML 两条路线共用唯一的版式基准 `assets/reference_lecture_style.html`**：
-深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文。提交任务时它会作为「样式参考」自动随语音稿上传，
-提示词第一条就是「先读它的 `<style>` 并原样复用」。成品与样板不是同一套视觉语言，一律返工。
+**HTML 有两套版式样板，样板与提示词必须配对**（交叉使用一律返工）：
+
+| 版式 | 样板 | 配套提示词 |
+|---|---|---|
+| A 深蓝金（默认） | `assets/reference_lecture_style.html` | `scripts/prompt_html_color.txt` |
+| B 现代扁平 | `assets/reference_lecture_color.html` | 用户提供的 `通用课程讲义_HTML版AI提示词.md` |
+
+提交任务时样板作为「样式参考」随语音稿一起上传，提示词第一条就是「先读它的 `<style>` 并原样复用」。
 公式全部由 **MathJax 3 渲染 TeX（CHTML 输出）**，PDF 里不允许出现任何 `\frac` / `$` 残留。
+**模型执行时最常见的两个事故：没给它样板（封面盒子全走样）、用了 `tex-svg.js`（公式打印后空心描边）。**
 
 ## 目录结构
 
@@ -64,7 +70,8 @@ lecture-notes-pdf/
 ├── SKILL.md                      # 主流程（单节课，7 个阶段）
 ├── README.md                     # 本文件
 ├── assets/
-│   └── reference_lecture_style.html  # HTML 讲义的唯一版式样板（可打印，4 页）
+│   ├── reference_lecture_style.html  # 版式 A：深蓝金（可打印，4 页）
+│   └── reference_lecture_color.html  # 版式 B：现代扁平四色（可打印，4 页）
 ├── references/
 │   ├── html-layout.md            # 彩色 / 黑白 HTML 的 A4 打印规范（设计令牌、组件、两遍法目录）
 │   ├── batch-mode.md             # 批量处理多节课的状态机与并发控制

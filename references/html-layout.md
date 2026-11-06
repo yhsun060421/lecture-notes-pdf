@@ -1,10 +1,18 @@
 # HTML 排版规范（彩色 / 黑白 A4）
 
-本项目的 HTML 讲义只有**一套视觉语言**：深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文。
-所有课程都必须长成同一个样子，只有黑白版把色相换成灰阶。
+本项目有两套**互不混用**的彩色视觉语言，黑白版只把其中一套的色相压成灰阶。
+**样板文件与提示词必须配对使用**，交叉使用会得到四不像的成品（这是实测踩过的坑）。
 
-**实现基准是仓库里的样板文件：`assets/reference_lecture_style.html`。**
-提交任务时必须把它作为「样式参考」附件随语音稿一起上传；`submit_to_tabbit.py --style html-*` 会自动带上。
+| 版式 | 样板文件 | 配套提示词 | 一眼认出的特征 |
+|---|---|---|---|
+| **A 深蓝金**（默认） | `assets/reference_lecture_style.html` | `scripts/prompt_html_color.txt` | 深海军蓝封面 + 金色竖条 + 实色标题栏五色盒子 |
+| **B 现代扁平** | `assets/reference_lecture_color.html` | `通用课程讲义_HTML版AI提示词.md` | 70 mm 深蓝色块封面 + 圆形序号徽章 + 左侧 4 px 竖线浅底盒子 + 胶囊标签 |
+
+两套的共同底线相同：A4、MathJax **CHTML**、内联 SVG 插图、目录用两遍法、只交一个 PDF。
+
+提交任务时必须把对应样板作为「样式参考」附件随语音稿一起上传：
+`submit_to_tabbit.py --style html-*` 默认带 A；用 B 时传 `--ref assets/reference_lecture_color.html`
+并配 `--prompt <填好变量的提示词 md>`。
 
 ---
 
@@ -29,19 +37,26 @@
 ## 二、样板文件怎么用
 
 ```
-assets/reference_lecture_style.html   ← 唯一版式基准（4 页：封面 / 目录 / 正文样式 / 表格插图）
+assets/reference_lecture_style.html   ← 版式 A（4 页：封面 / 目录 / 正文样式 / 表格插图）
+assets/reference_lecture_color.html   ← 版式 B（4 页：封面 / 正文组件 / 五类盒子 / 表格与插图）
 ```
 
 - **上传**：提交任务 step 1 与语音稿一起上传，提示词开头会要求模型先读它的 `<style>`。
-- **复用**：模型必须原样抄 CSS 变量与组件类名（`.box.thm/.board/.exam/.warn/.note`、`.tag`、`.chap`、`.table.t`、`figure`）。
-- **替换**：只替换括号占位文案，版式、字号、留白、配色分毫不动。
-- **自检**：成品第一眼必须与样板同款——深蓝封面、金色小标、五色盒子；否则重做。
+- **复用**：模型必须原样抄 CSS 变量与组件类名。
+  - A：`.box.thm/.board/.exam/.warn/.note`、`.tag`、`.chap`、`.table.t`、`figure`
+  - B：`.box.def/.thm/.method/.warn/.exam-tip/.quote/.example`、`.tag.lecture/.thm/.key/.exam`、`h2.chap`、`table.t`、`figure`
+- **替换**：只替换占位文案，版式、字号、留白、配色分毫不动。
+- **自检**：成品第一眼必须与样板同款；否则重做。
 
-> 样板本身就是可打印的：`python -I scripts/render_html_pdf.py assets/reference_lecture_style.html out.pdf`。
+> 两个样板本身都可打印：
+> `python -I scripts/render_html_pdf.py assets/reference_lecture_color.html out.pdf`
 
 ---
 
-## 三、设计令牌（不得改值）
+## 三、版式 A 的设计令牌（不得改值）
+
+> 版式 B 的令牌见 `assets/reference_lecture_color.html` 的 `:root` 与
+> `通用课程讲义_HTML版AI提示词.md` 的 §3.2，两套数值不可互相替换。
 
 ```css
 :root{

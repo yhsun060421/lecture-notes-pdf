@@ -57,11 +57,65 @@ python -c "f=open(r'<文件>','rb');f.seek(<size>//2);d=f.read(1048576);print(ro
 
 ## 二、转写
 
+### 转写结果只覆盖课程的后半段
+
+**症状**：音频时长明明 1:50:00，听悟返回的稿子第一句却从 `55:02` 开始，前 55 分钟一句话没有。
+
+**根因**：ECNU 播放页每个小节渲染**两个 `<video>`（双机位）**，其中**一路的音轨全程静音**。
+按 `performance.getEntriesByType("resource")` 取"第一个 mp4"或"最长的那路"都可能抽到静音轨。
+
+**判据**：抽音频前先分段验音量，任何一段低于 -60 dB 就是静音轨：
+
+```bash
+for s in 0 1800 3300 5400; do
+  ffmpeg -ss $s -t 120 -i "$AUDIO" -af volumedetect -f null - 2>&1 | grep mean_volume
+done
+```
+
+**处置**：回到播放页，用 `video.currentSrc` 取**另一路**的直链，经 Motrix 下载后单独抽音频，
+与已有片段用 `ffmpeg -f concat -safe 0 -c copy` 拼接。拼接后必须再跑一遍上面的分段验音量，
+每段都在 -30 dB 上下才算可用。**不要**拿半份稿去生成讲义——模型不会报错，只会默默少讲一半。
+
 ### 点「上传音视频」没有文件选择框
 
 **根因**：听悟的上传是一个三步 UI，不是直接弹选择器。
 
 **处置**：必须依次点「上传音视频」→「上传本地音视频文件」→「点击 / 拖拽」。第三步才触发隐藏的 `input[type=file]`。用 `scripts/js/tingwu_upload.js`。
+
+### 点「上传音视频」时 `locator.click` 一直超时
+
+**症状**：`Timeout 10000ms exceeded`，调用日志停在 `click action done` → `waiting for scheduled navigations to finish`，
+但弹窗其实已经开出来了；后续步骤全乱套（第二次点在「导入阿里云盘文件」上，弹出来的是 `about:blank` 之类的无关面板）。
+
+**根因**：听悟的首页点击会挂起一个永不结束的导航（埋点跳转），Playwright 的 `click` 动作后默认要等导航结束。
+
+**处置**：不要用默认的 `locator.click()`。两条等效的路子：
+
+```js
+// 路子一：页面内原生 click，绕开动作性检查与导航等待
+await page.evaluate(() => {
+  const el = [...document.querySelectorAll("span,div")]
+    .find(e => (e.innerText || "").trim() === "上传音视频");
+  el.click();
+});
+```
+
+```js
+// 路子二：force + noWaitAfter
+await page.getByText("上传音视频", {exact: true}).first()
+  .click({force: true, noWaitAfter: true});
+```
+
+第二层点「上传本地音视频文件」之后，页面里就会出现 `.ant-modal` 和一个 `input[type=file]`，
+**直接 `setInputFiles()`，不用再点第三层**，成功率最高：
+
+```js
+const h = await page.$("input[type=file]");
+await h.setInputFiles("C:/path/to/lecture.mp3");
+// 随后点弹窗里的「开始转写」
+```
+
+判据：弹窗文本里出现 `文件数量：1/50` 与你上传的文件名（带大小），才算真的进去了。
 
 ### 上传成功但一直"排队中"
 
@@ -216,6 +270,16 @@ open("out.txt", "w", encoding="utf-8").write(text)
 **根因**：没等 MathJax 渲染完就打印。
 
 **处置**：`await page.evaluate(() => MathJax.startup.promise)` 之后再 `page.pdf()`；行间公式确认用的是 `\[...\]`。
+
+### 成品封面、盒子跟样板完全不是一回事
+
+**根因**：模型只看提示词文字、没拿到样板文件。纯文字描述「深蓝封面 + 五色盒子」，
+不同模型的理解完全不同，实测三节课全部走了样。
+
+**处置**：提交时把对应的样板 HTML 作为「样式参考」附件一起上传，并在提示词**最前面**写
+「先读我上传的 `reference_lecture_*.html`，CSS 变量与组件类名原样照抄」。
+同时明确一句「样板里的课程名/章节/例题都是占位，必须整段换成本讲内容」，
+否则模型会连样板的示例主题一起抄进成品。
 
 ### 公式放大后是空心轮廓 / 毛边
 

@@ -323,9 +323,16 @@ python -I scripts\clean_transcript.py "<语音文字稿目录>" "<输出目录>"
 | 彩色 HTML | `scripts/prompt_html_color.txt` | A4 彩色 PDF | HTML+CSS + MathJax3 CHTML + Chromium `page.pdf` |
 | 黑白 HTML | `scripts/prompt_html_bw.txt` | A4 黑白 PDF | 同上，全灰度 + 符号标签 |
 
-**HTML 两条路线必须带样式样板**：`assets/reference_lecture_style.html` 是唯一的版式基准
-（深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文）。提交时它会作为「样式参考」随语音稿一起上传，
-提示词第一条就要求模型先读它的 `<style>` 并原样复用；不传样板、或成品与样板不是同一套视觉语言，一律返工。
+**HTML 两条路线必须带样式样板**，且**样板与提示词配对**，交叉使用一律返工：
+
+| 版式 | 样板 | 配套提示词 |
+|---|---|---|
+| A 深蓝金（默认） | `assets/reference_lecture_style.html` | `scripts/prompt_html_color.txt` / `prompt_html_bw.txt` |
+| B 现代扁平 | `assets/reference_lecture_color.html` | 用户指定的 `通用课程讲义_HTML版AI提示词.md`（填好变量后用 `--prompt` 传入） |
+
+提交时样板作为「样式参考」随语音稿一起上传，提示词第一条要求模型先读它的 `<style>` 并原样复用。
+不传样板、或成品与样板不是同一套视觉语言，一律返工。
+用 B 版式时：`--style html-color --prompt <提示词md> --ref assets/reference_lecture_color.html`。
 
 完整技术规范（设计令牌、组件清单、A4 参数、页眉页脚、目录两遍法、打印质检、黑白映射）见
 [references/html-layout.md](references/html-layout.md)。

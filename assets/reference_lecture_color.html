@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>版式样板 · 彩色 HTML 讲义</title>
+<style>
+/* ===== 设计令牌：全站只引用变量，不得改值 ===== */
+:root{
+  --navy:#0f2743; --ink:#1f2937; --muted:#64748b;
+  --blue:#1d4ed8;  --blue-bg:#eff6ff;  --blue-line:#bfdbfe;
+  --green:#047857; --green-bg:#ecfdf5; --green-line:#a7f3d0;
+  --red:#b91c1c;   --red-bg:#fef2f2;   --red-line:#fecaca;
+  --amber:#b45309; --amber-bg:#fffbeb; --amber-line:#fde68a;
+  --purple:#6d28d9;--purple-bg:#f5f3ff;--purple-line:#ddd6fe;
+  --cyan:#0891b2;  --cyan-bg:#ecfeff;
+  --rule:#e5e7eb;
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"Source Han Serif SC","Noto Serif CJK SC","Microsoft YaHei",serif;
+  font-size:10.5pt; line-height:1.75; color:var(--ink);
+  background:#fff; text-align:justify;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4,h5,
+.badge,.pill,.tag,.kicker,.meta th,.meta td,.toc,.box-title,.cover-title{
+  font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+}
+
+/* ===== 页面 ===== */
+@page{ size:A4; margin:17mm 15mm 13mm 15mm; }
+.page{ width:180mm; margin:0 auto; }
+
+/* ===== 封面 ===== */
+.cover{ padding:0; }
+.cover-band{
+  background:var(--navy); color:#fff;
+  padding:14mm 12mm 12mm 12mm; margin:0 0 6mm 0;
+}
+.kicker{
+  font-size:9pt; letter-spacing:.16em; text-transform:uppercase;
+  color:rgba(255,255,255,.7); margin-bottom:6mm;
+}
+.cover-title{ font-size:40pt; font-weight:700; line-height:1.15; margin:0 0 4mm; }
+.cover-sub{ font-size:18pt; font-weight:600; color:#fff; margin:0 0 4mm; }
+.cover-lead{ font-size:11pt; color:rgba(255,255,255,.8); line-height:1.7; margin:0; }
+
+table.meta{ width:100%; border-collapse:collapse; margin:0 0 6mm; font-size:9.5pt; }
+table.meta th{
+  text-align:left; font-weight:600; color:var(--navy); width:26mm;
+  padding:2mm 3mm 2mm 0; border-bottom:1px solid var(--rule); vertical-align:top;
+}
+table.meta td{ padding:2mm 0; border-bottom:1px solid var(--rule); color:var(--ink); }
+
+.overview{
+  border:1px solid var(--blue-line); background:var(--blue-bg);
+  border-radius:4px; padding:5mm 6mm; margin:0 0 6mm; break-inside:avoid;
+}
+.overview h4{ margin:0 0 2mm; font-size:11pt; color:var(--blue); }
+.overview p{ margin:0; font-size:10pt; }
+
+.legend{ margin:0 0 6mm; }
+.legend h4{ margin:0 0 2.5mm; font-size:11pt; color:var(--navy); }
+.legend-row{ display:flex; gap:4mm; flex-wrap:wrap; font-size:9.5pt; color:var(--muted); }
+
+/* ===== 胶囊标签 ===== */
+.tag{
+  display:inline-block; border-radius:999px; padding:1px 6px;
+  font-size:8pt; line-height:1.5; color:#fff; white-space:nowrap;
+  vertical-align:.5pt;
+}
+.tag.lecture{ background:var(--blue); }
+.tag.thm{ background:var(--green); }
+.tag.key{ background:var(--red); }
+.tag.exam{ background:var(--purple); }
+
+/* ===== 目录 ===== */
+.toc{ border-top:2px solid var(--navy); padding-top:3mm; }
+.toc h4{ margin:0 0 3mm; font-size:13pt; color:var(--navy); letter-spacing:.02em; }
+.toc ol{ list-style:none; margin:0; padding:0; font-size:10pt; }
+.toc li{ display:flex; align-items:baseline; gap:2mm; padding:1.2mm 0; }
+.toc .no{ color:var(--blue); font-weight:700; width:8mm; flex:none; }
+.toc .dots{ flex:1; border-bottom:1px dotted #cbd5e1; transform:translateY(-2px); }
+.toc .pg{ color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* ===== 章节标题 ===== */
+h2.chap{
+  display:flex; align-items:center; gap:3mm;
+  margin:18pt 0 8pt; padding-left:4mm; border-left:4px solid var(--blue);
+  font-size:21pt; font-weight:700; color:var(--navy); line-height:1.35;
+  break-after:avoid;
+}
+h2.chap .badge{
+  flex:none; width:22pt; height:22pt; border-radius:50%;
+  background:var(--blue); color:#fff; font-size:12pt; font-weight:700;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+h3{
+  margin:12pt 0 5pt; font-size:13pt; font-weight:700; color:var(--navy);
+  break-after:avoid;
+}
+h4.sub{ margin:9pt 0 3pt; font-size:11pt; font-weight:700; color:var(--blue); }
+p{ margin:0 0 3.5mm; orphans:2; widows:2; }
+
+/* ===== 内容盒子 ===== */
+.box{
+  border-radius:4px; padding:8mm 6mm; margin:0 0 4mm;
+  break-inside:avoid; position:relative;
+}
+.box .box-title{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:10pt; font-weight:700; margin:0 0 2.5mm;
+}
+.box .box-title .label{ font-size:8pt; font-weight:400; opacity:.85; }
+.box p:last-child,.box ul:last-child,.box ol:last-child{ margin-bottom:0; }
+.box ul,.box ol{ margin:0 0 2mm; padding-left:6mm; }
+
+.box.def{ background:var(--blue-bg); border-left:4px solid var(--blue); }
+.box.def .box-title{ color:var(--blue); }
+.box.thm{ background:var(--green-bg); border-left:4px solid var(--green); }
+.box.thm .box-title{ color:var(--green); }
+.box.method{ background:var(--amber-bg); border-left:4px solid var(--amber); }
+.box.method .box-title{ color:var(--amber); }
+.box.warn{ background:var(--red-bg); border-left:4px solid var(--red); }
+.box.warn .box-title{ color:var(--red); }
+.box.exam-tip{ background:var(--purple-bg); border-left:4px solid var(--purple); }
+.box.exam-tip .box-title{ color:var(--purple); }
+.box.quote{ background:var(--cyan-bg); border-left:4px solid var(--cyan); }
+.box.quote .box-title{ color:var(--cyan); }
+.box.quote .said{ font-style:normal; }
+
+.box.example{
+  background:#fff; border:1px solid var(--navy);
+}
+.box.example .box-title{ color:var(--navy); border-bottom:1px solid var(--rule); padding-bottom:2mm; }
+.box.example .sol{ margin-top:2mm; }
+.box.example .sol b{ color:var(--navy); }
+
+/* 时间戳 */
+.ts{ color:var(--blue); font-size:9pt; white-space:nowrap; }
+
+/* ===== 表格 ===== */
+table.t{ width:100%; border-collapse:collapse; margin:0 0 4mm; font-size:9.5pt; break-inside:avoid; }
+table.t caption{ caption-side:top; text-align:left; font-size:9pt; color:var(--muted); padding-bottom:1.5mm; }
+table.t th{
+  background:var(--navy); color:#fff; font-weight:600; text-align:left;
+  padding:2mm 3mm; font-size:10pt;
+}
+table.t td{ padding:1.8mm 3mm; border-bottom:1px solid var(--rule); vertical-align:top; }
+table.t tbody tr:nth-child(odd){ background:#f8fafc; }
+table.t td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+
+/* ===== 插图 ===== */
+figure{ margin:0 0 4mm; text-align:center; break-inside:avoid; }
+figure svg{ max-width:100%; height:auto; }
+figcaption{ font-size:9pt; color:var(--muted); margin-top:2mm; }
+figcaption b{ color:var(--navy); font-weight:600; }
+
+/* ===== 公式 ===== */
+mjx-container[display="true"], .math-block{
+  margin:2mm 0 3.5mm !important; text-align:left !important;
+}
+.math-block{ font-size:11pt; }
+
+/* ===== 分页控制 ===== */
+.box, table.t, figure{ break-inside:avoid; }
+h2, h3, h4{ break-after:avoid; }
+p{ orphans:2; widows:2; }
+.page-break{ break-before:page; }
+
+@media print{
+  body{ background:#fff; }
+  .page{ margin:0; }
+}
+</style>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes:true, tags:'none' },
+    chtml: { scale: 1.0, displayAlign: 'left', mtextInheritFont: true },
+    options: { enableMenu: false }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+
+<!-- ================= 第 1 页：封面 ================= -->
+<section class="cover page">
+  <div class="cover-band">
+    <div class="kicker">Graph Theory · Lecture 04</div>
+    <div class="cover-title">图论及其应用</div>
+    <div class="cover-sub">第 4 次课：树与生成树</div>
+    <p class="cover-lead">从连通性出发，建立树、生成树与最小生成树三级结构，并把 Kruskal 与 Prim 两套贪心算法落到同一套割最优性判据上。</p>
+  </div>
+
+  <table class="meta">
+    <tr><th>课程名称</th><td>图论及其应用</td><th>讲　　次</th><td>第 4 次课</td></tr>
+    <tr><th>授课人</th><td>张老师</td><th>教材范围</th><td>第 3 章 §3.1–§3.3</td></tr>
+    <tr><th>素材来源</th><td>课堂录像 1:36:12 + 通义听悟语音稿 218 段</td><th>输出格式</th><td>A4 彩色 PDF</td></tr>
+  </table>
+
+  <div class="overview">
+    <h4>本讲速览</h4>
+    <p>主线：连通图 ⟶ 生成树 ⟶ 最小生成树（MST），核心判据是「割最优性」，两套贪心算法只是同一判据的两种执行顺序。</p>
+    <p>收录：2 节 / 6 个课堂例题 / 5 幅手绘插图 / 时间戳 41 处。</p>
+  </div>
+
+  <div class="legend">
+    <h4>标注体系</h4>
+    <div class="legend-row">
+      <span><span class="tag lecture">课堂讲授</span> 老师当堂完整推导</span>
+      <span><span class="tag thm">定理定义</span> 主干概念与结论</span>
+      <span><span class="tag key">重点</span> 反复强调、易错</span>
+      <span><span class="tag exam">可能考</span> 老师明示或暗示</span>
+    </div>
+  </div>
+
+  <nav class="toc">
+    <h4>本讲目录</h4>
+    <ol>
+      <li><span class="no">1</span><span>树与生成树</span><span class="dots"></span><span class="pg">2</span></li>
+      <li><span class="no">1.1</span><span>树的等价刻画</span><span class="dots"></span><span class="pg">2</span></li>
+      <li><span class="no">1.2</span><span>生成树的计数：Cayley 公式</span><span class="dots"></span><span class="pg">3</span></li>
+      <li><span class="no">2</span><span>最小生成树</span><span class="dots"></span><span class="pg">4</span></li>
+      <li><span class="no">2.1</span><span>割最优性判据</span><span class="dots"></span><span class="pg">4</span></li>
+      <li><span class="no">2.2</span><span>Kruskal 与 Prim</span><span class="dots"></span><span class="pg">4</span></li>
+    </ol>
+  </nav>
+</section>
+
+<!-- ================= 第 2 页：正文组件 ================= -->
+<section class="page page-break">
+  <h2 class="chap"><span class="badge">1</span>树与生成树<span style="margin-left:auto"><span class="tag thm">定理定义</span></span></h2>
+
+  <p>本讲从「无圈连通」这个最朴素的结构出发。老师先用五个等价命题把「树」钉死，再说明为什么这五个条件在证明里可以互相顶替。<span class="ts">[录音 03:12]</span></p>
+
+  <div class="box def">
+    <div class="box-title"><span>定义 1.1　树与生成树</span><span class="label">定义</span></div>
+    <p>不含圈的连通图称为<strong>树</strong>（tree）。若图 \(G\) 的生成子图 \(T\) 是树，则称 \(T\) 为 \(G\) 的一棵<strong>生成树</strong>（spanning tree）。</p>
+    <p>设 \(T\) 是 \(n\) 阶树，则 \(T\) 恰有 \(n-1\) 条边；反过来，\(n\) 阶连通图若有 \(n-1\) 条边，必为树。</p>
+  </div>
+
+  <div class="box thm">
+    <div class="box-title"><span>定理 1.2　树的五个等价刻画</span><span class="label">定理</span></div>
+    <p>对 \(n\) 阶图 \(G\)（\(n\ge 2\)），下列命题等价：</p>
+    <p style="margin-left:6mm">
+      (i) \(G\) 连通且无圈；　(ii) \(G\) 无圈且 \(m=n-1\)；　(iii) \(G\) 连通且 \(m=n-1\)；<br>
+      (iv) \(G\) 中任意两顶点间恰有一条通路；　(v) \(G\) 连通，且删去任一边后不连通。
+    </p>
+  </div>
+
+  <div class="box quote">
+    <div class="box-title"><span>老师原话</span><span class="label"><span class="ts">[录音 08:47]</span></span></div>
+    <p class="said">「这五个条件你考试的时候不要背，要会用。证明题里给你哪一个，你就从哪一个出发；给的是边数，你第一反应就是归纳。」<span class="tag exam">可能考</span></p>
+  </div>
+
+  <div class="box example">
+    <div class="box-title"><span>例题 1.1　（课堂讲授）<span class="tag lecture">课堂讲授</span></span><span class="label"><span class="ts">[画面 12:30]</span></span></div>
+    <p><strong>题：</strong>设 \(T\) 是 \(n\) 阶树，\(n\ge 2\)，证明 \(T\) 至少有两个叶子。</p>
+    <div class="sol">
+      <p><b>证：</b>取 \(T\) 的一条最长通路 \(P=v_1v_2\cdots v_k\)。若 \(v_1\) 不是叶子，则存在与 \(v_1\) 相邻且不在 \(P\) 上的顶点 \(u\)。</p>
+      \[
+        \begin{aligned}
+          &\text{若 } u \notin P:\quad v_k \cdots v_2 v_1 u \text{ 比 } P \text{ 更长，矛盾};\\
+          &\text{若 } u \in P:\quad \text{则 } P \text{ 上出现圈，与 } T \text{ 无圈矛盾}.
+        \end{aligned}
+      \]
+      <p>故 \(v_1\) 必为叶子；对 \(v_k\) 同理，得至少两个叶子。<span class="tag key">重点</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 第 3 页：方法小结 / 易错点 / 考点 ================= -->
+<section class="page page-break">
+  <h3>1.2　生成树的计数：Cayley 公式</h3>
+
+  <p>完全图 \(K_n\) 的生成树个数由 Cayley 公式给出，它是本讲唯一的计数结论，也是后面概率法的基础。</p>
+
+  <div class="box thm">
+    <div class="box-title"><span>定理 1.3　Cayley 公式</span><span class="label">定理</span></div>
+    <p>完全图 \(K_n\) 的生成树个数为</p>
+    \[ \tau(K_n) \;=\; n^{\,n-2},\qquad n\ge 2. \]
+    <p>等价说法：\(n\) 个标号顶点上的树共有 \(n^{n-2}\) 棵。</p>
+  </div>
+
+  <div class="box method">
+    <div class="box-title"><span>方法小结　三个常用套路</span><span class="label">方法小结</span></div>
+    <ul>
+      <li><strong>归纳法</strong>：对 \(n\) 归纳，删掉一个叶子把问题降一阶（上面例题 1.1 的写法）。</li>
+      <li><strong>双计数</strong>：同一集合按两种方式各数一遍，令两式相等，Cayley 公式的 Prüfer 证明即属此类。</li>
+      <li><strong>破圈法 / 避圈法</strong>：判断生成树存在性时，破圈法给出「贪心删边」的直觉依据。</li>
+    </ul>
+  </div>
+
+  <div class="box warn">
+    <div class="box-title"><span>易错点　边数 \(n-1\) 不能单独用</span><span class="label">易错点</span></div>
+    <p>「\(m=n-1\)」<strong>单独</strong>推不出树：不连通的图也可能有 \(n-1\) 条边（例如 \(K_3\) 加一个孤立点，\(n=4,\ m=3\)）。必须与「连通」或「无圈」之一同时成立。<span class="tag key">重点</span></p>
+    <p>另一个坑：把「生成子图」写成「子图」——生成树要求顶点集完全相同，只是边集取子集。</p>
+  </div>
+
+  <div class="box exam-tip">
+    <div class="box-title"><span>考点提示　本章的三种出题面</span><span class="label">考点提示</span></div>
+    <p>老师在本讲结尾明确说了三种题型：<span class="ts">[录音 1:22:15]</span></p>
+    <ol>
+      <li>给一张具体的图，要求写出全部生成树或数出个数——套 Cayley 公式或直接枚举。</li>
+      <li>证明「连通图必有生成树」——用破圈法写构造性证明。</li>
+      <li>给带权图求最小生成树——必须写清每一步选边的依据（割最优性）。</li>
+    </ol>
+  </div>
+
+  <h4 class="sub">引理：割最优性的一个直接推论</h4>
+  <p>设 \(S\subset V\)，\(\delta(S)\) 为跨割边集。若 \(e\in\delta(S)\) 是 \(\delta(S)\) 中权最小的边，则存在一棵 MST 包含 \(e\)。证明用交换论证：把 \(e\) 换进任一棵不含 \(e\) 的 MST 即可，注意换入后仍是树。</p>
+  \[
+    w(T') \;=\; w(T) - w(f) + w(e) \;\le\; w(T),\qquad f\in\delta(S)\cap T .
+  \]
+</section>
+
+<!-- ================= 第 4 页：表格 + 插图 ================= -->
+<section class="page page-break">
+  <h2 class="chap"><span class="badge">2</span>最小生成树<span style="margin-left:auto"><span class="tag lecture">课堂讲授</span></span></h2>
+
+  <p>带权连通图 \(G=(V,E,w)\) 中，权和最小的生成树称为<strong>最小生成树</strong>（MST）。两套经典算法在同一张图上会得到同一棵（或同权）树。</p>
+
+  <table class="t">
+    <caption>表 2-1　Kruskal 与 Prim 的对照（依据 [画面 1:04:20] 板书整理）</caption>
+    <thead>
+      <tr><th style="width:22%">对比项</th><th style="width:39%">Kruskal</th><th style="width:39%">Prim</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>选边方式</td><td>全局按权升序，逐条试加</td><td>从一点出发，每次扩一条最轻的跨界边</td></tr>
+      <tr><td>判据</td><td>两端不在同一分量（并查集）</td><td>一端在树内、一端在树外</td></tr>
+      <tr><td>复杂度</td><td class="num">\(O(m\log m)\)</td><td class="num">\(O(m\log n)\)（二叉堆）</td></tr>
+      <tr><td>适用</td><td>稀疏图</td><td>稠密图</td></tr>
+    </tbody>
+  </table>
+
+  <p>两者的正确性来自同一条判据：每一步选的边都是某个割上的最轻边，因此属于某棵 MST 的边集，算法结束时边数达到 \(n-1\)，即为 MST。<span class="ts">[录音 1:11:05]</span></p>
+
+  <figure>
+    <svg viewBox="0 0 520 200" width="520" height="200" role="img" aria-label="带权图及其最小生成树">
+      <g font-family="Source Han Sans SC, Microsoft YaHei, sans-serif" font-size="12" text-anchor="middle">
+        <!-- 边 -->
+        <line x1="60" y1="60" x2="180" y2="60" stroke="#1e40af" stroke-width="3"/>
+        <line x1="180" y1="60" x2="300" y2="60" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="60" y1="60" x2="120" y2="150" stroke="#1e40af" stroke-width="3"/>
+        <line x1="180" y1="60" x2="120" y2="150" stroke="#b45309" stroke-width="3"/>
+        <line x1="300" y1="60" x2="240" y2="150" stroke="#1e40af" stroke-width="3"/>
+        <line x1="120" y1="150" x2="240" y2="150" stroke="#1e40af" stroke-width="3"/>
+        <!-- 边权 -->
+        <text x="120" y="52" fill="#1e40af" font-size="11">2</text>
+        <text x="240" y="52" fill="#94a3b8" font-size="11">9</text>
+        <text x="80" y="112" fill="#1e40af" font-size="11">1</text>
+        <text x="158" y="114" fill="#b45309" font-size="11">3</text>
+        <text x="282" y="112" fill="#1e40af" font-size="11">4</text>
+        <text x="180" y="168" fill="#1e40af" font-size="11">7</text>
+        <!-- 顶点 -->
+        <circle cx="60" cy="60" r="16" fill="#fff" stroke="#1e40af" stroke-width="2"/><text x="60" y="65">A</text>
+        <circle cx="180" cy="60" r="16" fill="#fff" stroke="#1e40af" stroke-width="2"/><text x="180" y="65">B</text>
+        <circle cx="300" cy="60" r="16" fill="#fff" stroke="#1e40af" stroke-width="2"/><text x="300" y="65">C</text>
+        <circle cx="120" cy="150" r="16" fill="#fff" stroke="#1e40af" stroke-width="2"/><text x="120" y="155">D</text>
+        <circle cx="240" cy="150" r="16" fill="#fff" stroke="#1e40af" stroke-width="2"/><text x="240" y="155">E</text>
+        <!-- 图例 -->
+        <g font-size="10.5" text-anchor="start">
+          <line x1="360" y1="52" x2="392" y2="52" stroke="#1e40af" stroke-width="3"/><text x="400" y="56" fill="#1f2937">MST 边</text>
+          <line x1="360" y1="80" x2="392" y2="80" stroke="#b45309" stroke-width="3"/><text x="400" y="84" fill="#1f2937">被跳过（成圈）</text>
+          <line x1="360" y1="108" x2="392" y2="108" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="400" y="112" fill="#1f2937">非树边</text>
+        </g>
+      </g>
+    </svg>
+    <figcaption><b>图 2-1</b>　带权图与其最小生成树：粗蓝边 \(AD(1)\)、\(AB(2)\)、\(DE(7)\)、\(CE(4)\) 构成 MST，总权 \(14\)；赭色边 \(DB(3)\) 因成圈被跳过（依据 [画面 1:06:50] 板书重绘）</figcaption>
+  </figure>
+
+  <div class="box example">
+    <div class="box-title"><span>例题 2.1　（课堂讲授）</span><span class="label"><span class="ts">[画面 1:07:30]</span></span></div>
+    <p><strong>题：</strong>用 Kruskal 算法求图 2-1 的 MST，写出选边顺序与总权。</p>
+    <p><strong>解：</strong>按权升序依次考察：\(AD(1)\) 取；\(AB(2)\) 取；\(DB(3)\)——此时 \(A\to D\to B\to A\) 已成圈，<strong>跳过</strong>；\(CE(4)\) 取；\(DE(7)\) 取。共 \(4=n-1\) 条边，连通全部 5 个顶点，总权 \(1+2+4+7=14\)。<span class="tag key">重点</span></p>
+  </div>
+</section>
+
+</body>
+</html>
