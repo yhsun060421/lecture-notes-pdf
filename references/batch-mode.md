@@ -59,7 +59,7 @@
 | 阶段 | 建议并发 | 原因 |
 |---|---|---|
 | 取直链 | 1（串行） | 浏览器只有一个登录态，并发点页面会互相干扰 |
-| 下载 | 4–8 | 源站限速，单连接约 0.5 MB/s，多连接能到 4 MB/s |
+| 下载 | 2–3 个 Motrix 任务（每个 8 连接） | 源站限单 IP，任务开太多反而互相抢带宽 |
 | 抽音频 / 合并 | 2–4 | ffmpeg 吃 CPU，别和转写抢 |
 | 听悟上传 | 1（串行） | 网页端同一个上传面板，并发会互相覆盖 |
 | 听悟转写（排队中） | 平台侧并行 | 上传后即可传下一节，不用等 |
@@ -81,15 +81,17 @@
 
 若平台结构稳定，可退化为：在已登录的浏览器里用 JS 批量取 `performance.getEntriesByType("resource")`，一次拿一页的所有媒体请求。
 
-### B. 批量下载
+### B. 批量下载（Motrix）
 
 ```powershell
-# 每节课一条 aria2 任务，8 连接
+# 每节课一条 Motrix（aria2 RPC）任务，8 连接；同时最多 2–3 个任务
 foreach ($s in $states) {
-  if ($s.download -ne "done") { 添加 aria2 任务 }
+  if ($s.download -ne "done") { 添加 Motrix 任务 }
 }
 # 轮询 tellActive，全部为空后再校验
 ```
+
+图形界面等价操作：把直链逐条粘贴进 Motrix 新建任务。**不要用自写下载器当主路径**。
 
 校验统一走 `ffprobe` + 非零字节抽样（见主文档 2.3）。**校验不过的一律重下**，不要试图修复。
 
@@ -122,7 +124,7 @@ foreach ($lesson in $lessons) {
 
 ### E. 质检与归档
 
-- 每份 PDF 跑 `check_pdf.py`
+- 每份 PDF 跑 `check_pdf.py --style <latex|html-color|html-bw>`（与提交时的 `--style` 一致）
 - 不合格的进重试队列，失败原因写进 `state.fail_reason`
 - 合格的复制到交付目录并按中文序数改名
 - 全部完成后一次性更新 `交付说明.md`
