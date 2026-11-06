@@ -2,6 +2,48 @@
 
 课程视频 → 复习讲义 PDF 的端到端流水线 skill。
 
+## 硬约束（不可协商）
+
+前两条是用户定死的做法（下载走 Motrix、转写走 Tabbit 里的通义听悟），不按它做就是做错了，
+不要为了「自动化」或「省事」绕开。第三条是交付约定。
+
+### 一、下载视频：把链接复制到 Motrix 这个软件里下载
+
+拿到视频直链后，**把链接复制、粘贴进 Motrix 新建任务**，由 Motrix 下载。
+
+| 项 | 要求 |
+|---|---|
+| 工具 | Motrix（任务栏 / 开始菜单里的那个桌面软件） |
+| 动作 | `Ctrl+N` 新建任务 → 粘贴链接 → 选保存目录 → 提交 |
+| 连接数 | 8 连接（Motrix 默认多连接，不要改成 1） |
+| 为什么 | 实测同一源站：浏览器单线程约 0.5 MB/s，Motrix 8 连接可到 3–5 MB/s，快一个数量级 |
+| 校验 | 下完用 `ffprobe` 核对时长与大小，抽样确认非全零 |
+
+**禁止**：用 `curl` / `wget` / `aria2c` 命令行直接下；浏览器右键另存；自己写分块下载器当主路径。
+`scripts/download_chunked.py` 只在 Motrix 确实不可用、且用户明确同意时兜底。
+
+需要脚本化时走 Motrix 自己的 aria2 JSON-RPC（`127.0.0.1:16800`），**仍然是 Motrix 在下载**，不是另起一个下载器。
+
+### 二、视频转文字：在 Tabbit 里打开通义听悟这个网站来做
+
+**在 Tabbit 浏览器里打开通义听悟（`https://tingwu.aliyun.com`）**，用 Tabbit CLI 驱动它完成上传、开始转写、取回带时间戳全文。
+
+| 项 | 要求 |
+|---|---|
+| 入口 | Tabbit 浏览器 → 通义听悟网站 |
+| 驱动方式 | `tabbit-cli nodejs --task "听悟" ...`，跑 `scripts/js/tingwu_*.js` |
+| 输入 | `ffmpeg` 抽出的 16 kHz 单声道 64 kbps mp3 |
+| 取回 | 调 `/api/trans/getTransResult` 拿 `bt`(起始毫秒) + `tc`(文本)，转成 `mm:ss` |
+| 为什么 | 通义听悟的中文识别与时间戳质量满足双线还原要求，且能直接给出逐句起始时间 |
+
+**禁止**：本地 `whisper` / `faster-whisper` / 任何离线识别模型；用 Windows-MCP 手动点听悟的三层上传弹窗（路径长、易错，必须交给 Tabbit CLI）；拿浏览器里页面可见文本当全文（听悟是虚拟列表，`innerText` 只能拿到几千字）。
+
+### 三、交付：只交一个 PDF
+
+HTML / LaTeX 都是中间产物，必须在沙箱里编译或打印成 PDF，只把 PDF 作为「生成的文件」附件交出来。
+
+---
+
 支持三种排版，最终都输出 A4 PDF：
 
 | 排版 | 提示词 | 产物 |
@@ -14,12 +56,6 @@
 深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文。提交任务时它会作为「样式参考」自动随语音稿上传，
 提示词第一条就是「先读它的 `<style>` 并原样复用」。成品与样板不是同一套视觉语言，一律返工。
 公式全部由 **MathJax 3 渲染 TeX（CHTML 输出）**，PDF 里不允许出现任何 `\frac` / `$` 残留。
-
-## 三条硬约束
-
-1. **视频用 Motrix 下载**：把直链粘贴进 Motrix 新建任务，多连接能把源站速度从 0.5 MB/s 拉到 3–5 MB/s。
-2. **转写用 Tabbit 打开通义听悟**：在 Tabbit 浏览器里完成上传、开始转写、取回全文。
-3. **只交付一个 PDF**：HTML / LaTeX 都是中间产物，必须在沙箱里转成 PDF 再交付。
 
 ## 目录结构
 
@@ -70,7 +106,7 @@ D:\Anaconda\python.exe -m pip install pymupdf opencc-python-reimplemented
 ## 快速开始（单节课）
 
 ```powershell
-# 1) 取直链后，粘贴进 Motrix 下载（推荐 8 连接）
+# 1) 取直链后，把链接粘贴进 Motrix 下载（硬约束，8 连接）
 # 2) 校验并合并
 ffprobe -v error -show_entries format=duration,size -of default=nw=1 "课程合并\第8周周二.mp4"
 ffmpeg -f concat -safe 0 -i filelist.txt -c copy "课程合并\第8周周二.mp4"

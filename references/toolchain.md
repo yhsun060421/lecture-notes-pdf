@@ -113,7 +113,7 @@ powershell -File scripts\close_tab_uia.ps1 -TitleLike "*复习讲义*"
 
 ---
 
-## 三、通义听悟（必须经 Tabbit 浏览器操作）
+## 三、通义听悟（硬约束：必须在 Tabbit 浏览器里打开这个网站）
 
 **硬约束：转写一律在 Tabbit 浏览器里打开通义听悟完成**。不要用 Windows-MCP 手动点击，也不要用本地 whisper。
 
@@ -147,11 +147,11 @@ tabbit-cli nodejs --task "听悟" --request-id "tw-start-01" --timeout-ms 60000 
 
 ---
 
-## 四、Motrix（视频下载的唯一主路径）
+## 四、Motrix（硬约束：视频只从「链接粘贴进 Motrix」这条路下载）
 
 **硬约束：拿到视频直链后，把链接粘贴进 Motrix 下载**。不要用浏览器单线程、也不要自写下载器当主路径。
 
-### 4.1 图形界面操作（默认）
+### 4.1 图形界面操作（默认，也是用户指定的方式）
 
 1. 复制直链（带 `auth_key` 的完整 URL）；
 2. 打开 Motrix；
