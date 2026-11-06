@@ -309,7 +309,12 @@ python -I scripts\clean_transcript.py "<语音文字稿目录>" "<输出目录>"
 | 彩色 HTML | `scripts/prompt_html_color.txt` | A4 彩色 PDF | HTML+CSS + MathJax3 CHTML + Chromium `page.pdf` |
 | 黑白 HTML | `scripts/prompt_html_bw.txt` | A4 黑白 PDF | 同上，全灰度 + 符号标签 |
 
-HTML 两条路线的完整技术规范（A4 参数、页眉页脚、目录两遍法、打印质检、黑白专章）见 [references/html-layout.md](references/html-layout.md)。
+**HTML 两条路线必须带样式样板**：`assets/reference_lecture_style.html` 是唯一的版式基准
+（深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文）。提交时它会作为「样式参考」随语音稿一起上传，
+提示词第一条就要求模型先读它的 `<style>` 并原样复用；不传样板、或成品与样板不是同一套视觉语言，一律返工。
+
+完整技术规范（设计令牌、组件清单、A4 参数、页眉页脚、目录两遍法、打印质检、黑白映射）见
+[references/html-layout.md](references/html-layout.md)。
 
 ### 5.2 为什么要分三步
 
@@ -328,11 +333,15 @@ python -I scripts\submit_to_tabbit.py `
 
 `--style` 三选一：`latex`（默认）/ `html-color` / `html-bw`；也可用 `--prompt` 指定自定义提示词。
 
+`html-color` / `html-bw` **强制自带样式样板**：脚本会在 step 1 把 `assets/reference_lecture_style.html`
+与语音稿放进同一次 filechooser 上传，并逐张卡片核对文件名是否出现在 composer 里，缺哪张补传哪张。
+需要额外参考文件（往年讲义、教材扫描等）时用 `--ref <路径>` 追加，可重复。
+
 内部流程：
 
 | 步骤 | 动作 | 关键点 |
 |---|---|---|
-| 1 | 新开 `web.tabbit.com/newtab` → 选「任务」模式 → 添加引用 → 上传 txt | 先关引导弹窗；模式菜单点「任务」，备选文案「生成文件、操作网页和长程任务。」 |
+| 1 | 新开 `web.tabbit.com/newtab` → 选「任务」模式 → 添加引用 → 上传 txt + 参考文件 | 先关引导弹窗；模式菜单点「任务」，备选文案「生成文件、操作网页和长程任务。」；上传后核对文件名 |
 | 2 | 新开视频的 `file://` 页 → 回到 composer 输入 `@` + 视频关键词 → 点候选 | 必须先在 `[role=textbox]` 里打 `@`，再输关键词；候选里点 `.mp4` |
 | 3 | 用 `execCommand("insertText")` 灌入 prompt → 点 `Run` | 长文本不能用 `fill`，会被截断或触发校验 |
 

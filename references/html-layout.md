@@ -1,228 +1,261 @@
-# HTML 排版 → A4 打印 PDF
+# HTML 排版规范（彩色 / 黑白 A4）
 
-> 本文件是「彩色 HTML」「黑白 HTML」两条排版路线的技术规范。LaTeX 路线见 `scripts/prompt_latex.txt`。
+本项目的 HTML 讲义只有**一套视觉语言**：深海军蓝封面 + 金色点缀 + 五色盒子 + 衬线正文。
+所有课程都必须长成同一个样子，只有黑白版把色相换成灰阶。
 
----
-
-## 一、三条排版路线怎么选
-
-| 路线 | 提示词 | 产物 | 适用场景 |
-|---|---|---|---|
-| LaTeX | `scripts/prompt_latex.txt` | `xelatex` 编译出的 A4 PDF | 公式极多、需要严格分页与交叉引用；环境里 LaTeX 可用 |
-| 彩色 HTML | `scripts/prompt_html_color.txt` | Chromium 打印的 A4 彩色 PDF | 屏幕上阅读、彩色标注体系（四色标签）、插图多 |
-| 黑白 HTML | `scripts/prompt_html_bw.txt` | Chromium 打印的 A4 黑白 PDF | 要打印、要省墨、黑白激光打印机；不依赖颜色传达信息 |
-
-三条路线的**内容要求完全一致**（三线还原、全量读稿、`[录音 mm:ss]` ≥ 15、`[画面 mm:ss]` 覆盖板书、例题标注、术语纠错、只交付一个 PDF）。差别只在排版实现。
+**实现基准是仓库里的样板文件：`assets/reference_lecture_style.html`。**
+提交任务时必须把它作为「样式参考」附件随语音稿一起上传；`submit_to_tabbit.py --style html-*` 会自动带上。
 
 ---
 
-## 二、A4 打印的三个前提
+## 一、技术栈
 
-1. **HTML 不是交付物，PDF 才是。** 模型必须在沙箱里把 HTML 用无头 Chromium 打成 PDF，只把 PDF 作为附件交出来。
-2. **打印参数必须显式给全**：纸张 A4、四边页边距、`printBackground: true`、页眉页脚模板。缺 `printBackground` 会让所有底纹/色块消失。
-3. **打印前必须等 MathJax 渲染完成**，否则公式位置是空白或原始 `\(...\)` 文本。
+| 项 | 取值 |
+|---|---|
+| 排版 | 纯 HTML + CSS（无框架、无构建工具） |
+| 公式 | MathJax 3，**TeX 输入**，CHTML 输出（`tex-chtml.js`） |
+| 插图 | 内联 SVG（禁止位图、截图、外链） |
+| 打印 | Chromium / Playwright `page.pdf({format:"A4", printBackground:true})` |
+| 交付 | 一个 PDF，A4，彩色或纯黑白 |
 
-### 2.1 Playwright 打印（首选）
+三条红线：
 
-```js
-await page.waitForFunction(() => window.MathJax && MathJax.startup && MathJax.startup.promise);
-await page.evaluate(() => MathJax.startup.promise);
-await page.pdf({
-  path: "out.pdf",
-  format: "A4",
-  printBackground: true,
-  margin: { top: "17mm", bottom: "13mm", left: "15mm", right: "15mm" },
-  displayHeaderFooter: true,
-  headerTemplate: headerHTML,
-  footerTemplate: footerHTML,
-  preferCSSPageSize: false
-});
-```
-
-彩色版边距 `17/13/15/15`，黑白版 `18/15/18/18`（黑白版留白略大，便于装订）。
-
-### 2.2 Chromium 命令行（沙箱没有 Playwright 时）
-
-```bash
-chromium --headless=new --no-sandbox --disable-gpu \
-  --print-to-pdf=out.pdf --no-pdf-header-footer \
-  "file:///abs/path.html"
-```
-
-此时页眉页脚只能靠 CSS：
-
-```css
-@page { size: A4; margin: 17mm 15mm 13mm 15mm; }
-```
-
-页码用 CSS `@page` 的 `counter(page)` 在部分 Chromium 版本可用；不稳定时改为**在 HTML 里手工分页并写死页码**，或在打印后用 `pymupdf` 加页码。交付前必须抽查页码。
+1. 不得调用任何 LaTeX 引擎（xelatex / pdflatex / lualatex / tectonic / xdvipdfmx）。
+2. 不得用 `tex-svg.js`：字形是路径，Chromium 打印会带同色发丝描边，放大后公式呈空心轮廓。
+3. 不得给文字加描边（`-webkit-text-stroke`、`paint-order: stroke`、`text-shadow`）。
 
 ---
 
-## 三、CSS 骨架
+## 二、样板文件怎么用
+
+```
+assets/reference_lecture_style.html   ← 唯一版式基准（4 页：封面 / 目录 / 正文样式 / 表格插图）
+```
+
+- **上传**：提交任务 step 1 与语音稿一起上传，提示词开头会要求模型先读它的 `<style>`。
+- **复用**：模型必须原样抄 CSS 变量与组件类名（`.box.thm/.board/.exam/.warn/.note`、`.tag`、`.chap`、`.table.t`、`figure`）。
+- **替换**：只替换括号占位文案，版式、字号、留白、配色分毫不动。
+- **自检**：成品第一眼必须与样板同款——深蓝封面、金色小标、五色盒子；否则重做。
+
+> 样板本身就是可打印的：`python -I scripts/render_html_pdf.py assets/reference_lecture_style.html out.pdf`。
+
+---
+
+## 三、设计令牌（不得改值）
 
 ```css
 :root{
-  --ink:#1f2937; --muted:#64748b; --rule:#e5e7eb;
-  --navy:#0f2743;
-  --blue:#1d4ed8;  --blue-bg:#eff6ff;   --blue-line:#bfdbfe;
-  --green:#047857; --green-bg:#ecfdf5;  --green-line:#a7f3d0;
-  --red:#b91c1c;   --red-bg:#fef2f2;    --red-line:#fecaca;
-  --amber:#b45309; --amber-bg:#fffbeb;  --amber-line:#fde68a;
-  --purple:#6d28d9;--purple-bg:#f5f3ff; --purple-line:#ddd6fe;
+  --navy:#0d1f33;  --navy2:#142d48;  --gold:#f0a03c;  --gold-l:#f5bf6a;
+  --blue:#1a4e8a;  --blue-bg:#e9f1fa;
+  --teal:#0e6673;  --teal-bg:#e6f4f5;
+  --crimson:#8a1b3b; --crimson-bg:#fae9f0;
+  --amber:#a75c00; --amber-bg:#fdf2e3;
+  --slate:#6a798b; --slate-bg:#f4f6f9;
+  --ink:#111; --mid:#3a434e; --soft:#66707c; --hair:#d8dde3;
 }
-*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-body{ margin:0; color:var(--ink); font-size:10.5pt; line-height:1.75;
-      font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
-      text-align:justify; }
-p{ orphans:2; widows:2; margin:0 0 6pt; }
-h2,h3{ break-after:avoid; page-break-after:avoid; }
-.box, table, figure{ break-inside:avoid; page-break-inside:avoid; }
 ```
 
-要点：
+| 令牌 | 用途 |
+|---|---|
+| `--navy` / `--gold` | 封面底色、章节条、强调竖条 |
+| `--blue` | 定义 / 定理盒 |
+| `--teal` | 板书 / 关键帧盒 |
+| `--crimson` | 例题盒（最醒目） |
+| `--amber` | 易错点盒 |
+| `--slate` | 整理说明 / 注释盒 |
 
-- `print-color-adjust: exact` 必须给到所有元素（`*`），否则彩色底纹会被浏览器自动去掉。
-- 不要用 `position: fixed` 做页眉页脚——分页后每页只会出现一次或错位；用 Playwright 的 `headerTemplate` / `footerTemplate`。
-- 不要给 `body` 设固定高度或 `overflow: hidden`，否则内容会被裁掉且不报错。
+版式基线：
+
+| 项 | 值 |
+|---|---|
+| 页面 | A4，`margin: 18mm 16mm 16mm 16mm` |
+| 正文 | 10.4 pt / 1.74，两端对齐，衬线（Source Han Serif SC → SimSun） |
+| 标题 | 黑体（Source Han Sans SC → Microsoft YaHei） |
+| 封面高 | 262 mm，结束后强制分页 |
+| 盒子间距 | 4 mm，`break-inside: avoid` |
 
 ---
 
-## 四、公式：MathJax 3 + CHTML
+## 四、页面骨架
+
+### 4.1 封面 `.cover`
+1. 顶部深蓝色块（左侧 3.2 mm 金色竖条）：英文小标 → 课程名 40 pt → 「第 X 次课」22 pt 金色 → 主线一行 12 pt → 细分隔线。
+2. 信息表 `table.meta`：课程名称 / 课次 / 授课人 / 教材范围 / 素材来源 / 输出格式。
+3. 「标注体系」框：2×2 网格，四类标签 + 释义。
+4. 页脚：左侧两行来源说明，右侧讲义字样，上方 2 px 实线。
+
+### 4.2 目录 `.toc`
+- 单独成页；标题 20 pt 深蓝，下缘 2.5 px 实线。
+- 一级条目：金色序号 + 点线引导 + 右对齐页码；二级缩进 11 mm、灰色小号。
+- 页码必须与正文页脚一致（见第七节）。
+
+### 4.3 章节条 `.chap`
+- 深蓝通栏 + 左侧 3.2 mm 金色条；上排英文 `C H A P T E R  0 1`，下排章名 19 pt。
+- **不强制分页**，自然接续；但后面至少要跟两行正文（`break-after: avoid`）。
+
+### 4.4 标题
+- `h2`：14.4 pt 深蓝、左侧 2.2 mm 金色竖条、灰色序号前缀。
+- `h3`：11.8 pt、下缘 0.8 px 细线。
+- 节首可加 `.lead` 导语（10.8 pt `--mid`）。
+
+---
+
+## 五、组件
+
+### 5.1 盒子（五类，不得混用）
+
+```html
+<div class="box thm">
+  <div class="bh"><span class="l">定 理 1.1　（定理名）</span><span class="r">定理 · 定义</span></div>
+  <div class="bb">正文</div>
+</div>
+```
+
+| 类 | 用途 | 标题栏 | 底色 | 右侧标签 |
+|---|---|---|---|---|
+| `.thm` | 定义、定理、性质 | 蓝底白字 | `--blue-bg` | 定理 · 定义 |
+| `.board` | 板书、关键帧 | 青底白字 | `--teal-bg` | 板书 · 关键帧 |
+| `.exam` | 例题 + 解答 | 绛红底白字 | `--crimson-bg` | 例题 · 课堂 |
+| `.warn` | 易错点、反例 | 赭底白字 | `--amber-bg` | 重点 |
+| `.note` | 整理说明、来源核对 | 灰蓝底白字 | `--slate-bg` | 整理说明 |
+
+- 标题栏实色通栏，左侧 3 mm 白色半透明竖条；正文区浅底 + 0.8 px 主色边框。
+- 例题的「题目 / 解 / 方法小结」放在同一个 `.exam` 内，不拆盒。
+
+### 5.2 标签 `.tag`
+- 7.8 pt，白底细边；变体 `.navy`（深蓝实底）、`.gold`（金底深字）、`.crimson`（绛红实底）、`.blue`。
+- 语义固定：课堂讲授 → navy；重点 → gold；可能考 → crimson；定理定义 → blue。
+
+### 5.3 引语 `.quote` 与时间戳 `.ts`
+- 引语：左侧 3 px 金色竖线 + `#fffaef` 底；时间戳 8.4 pt `--blue`，固定格式 `[录音 mm:ss]` / `[画面 mm:ss]`。
+
+### 5.4 表格 `table.t`
+- 表头深蓝白字；隔行 `#f7f9fb`；只留 0.6 px 横线，无竖线；表题在表上方。
+
+### 5.5 插图 `figure`
+- 内联 SVG，`max-width:100%`，居中；图注在下 `图 X-Y 说明`。
+- 顶点白填充 + 1.8 px 深蓝描边；有向边必须箭头；语义配色：主结构蓝、已选金、候选青、辅助灰。
+- **标签不得压线、压顶点**；密度大就移到空白象限加引线。
+- 图的数据必须与正文完全一致。
+
+---
+
+## 六、公式
 
 ```html
 <script>
-MathJax = {
-  tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
-  chtml: { scale: 1.0, displayAlign: 'left' },
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true, tags: 'none' },
+  chtml: { scale: 1.0, mtextInheritFont: true },
   options: { enableMenu: false }
 };
 </script>
-<script id="MathJax-script" async
-        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
 ```
 
-必须遵守：
-
-1. **只准 `tex-chtml.js`**，不准 `tex-svg.js`。SVG 输出把字形变成路径，Chromium 打印时会加同色发丝描边，400 dpi 下呈空心轮廓。
-2. 打印前 `await MathJax.startup.promise`，并再等一帧（`requestAnimationFrame`）。
-3. 行间公式 `\[ ... \]`，不要用 `$$...$$`（MathJax 3 默认不认）。
-4. 公式容器加 `break-inside: avoid`，避免一个公式被分页切成两半。
-5. 长公式用 `\begin{aligned}` 主动换行，不要让浏览器横向溢出。
-
----
-
-## 五、字体
-
-| 用途 | 字体栈 |
-|---|---|
-| 正文（彩色版） | `"Source Han Serif SC","Noto Serif CJK SC","Microsoft YaHei"` |
-| 正文（黑白版） | `"Source Han Serif SC","Noto Serif CJK SC","SimSun"` |
-| 标题 | `"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei"` |
-| 公式 | MathJax 自带 Web 字体（CHTML 输出为真实字体） |
-
-- 沙箱里没有中文字体时先 `fc-list :lang=zh` 查，再从系统字体里选可用的；不得让中文变成方框。
-- 打印前确认 `pdffonts` 里中文字体是内嵌的（`emb = yes`）。
-
----
-
-## 六、版面组件
-
-### 6.1 封面
-深色（彩色版深蓝 / 黑白版纯黑）色块 + 课程名 + 讲次 + 一句话梗概 + 信息表 + 速览 + 标注体系说明 + 目录。色块高度约 65–70 mm，占满页宽。
-
-### 6.2 章节标题
-`序号徽章` + `标题` + `右侧 pill`。左侧 4–5 px 竖条。**禁止 `page-break-before: always`**，章节连续排版。
-
-### 6.3 内容盒子
-一类一个固定样式，全篇不得混用：
-
-| 盒子 | 彩色版 | 黑白版 |
-|---|---|---|
-| 定义 | 蓝底 + 4px 蓝左边框 | 白底 + 1.5px 黑框 + 左侧 6px 黑条 |
-| 定理 | 绿底 + 4px 绿左边框 | 浅灰底 + 3px 双线黑框 |
-| 方法小结 | 琥珀底 + 4px 琥珀左边框 | 中灰底 + 1.5px 虚线框 |
-| 易错点 | 红底 + 4px 红左边框 | 深灰底 + 2px 黑框 + 左上角黑三角 |
-| 考点提示 | 紫底 + 4px 紫左边框 | 浅灰底 + 2px 黑框 + 右侧 6px 黑条 |
-| 老师原话 | 青底 + 4px 青左边框 | 白底 + 左侧点线 + 斜体 |
-| 例题 | 白底 + 1px 深蓝全框 | 白底 + 1px 黑全框 |
-
-统一圆角 3–4 px、内边距 8 mm 6 mm、`break-inside: avoid`。
-
-### 6.4 标注标签
-- 彩色版：胶囊 + 白字 + 四色（蓝课堂讲授 / 绿定理定义 / 红重点 / 紫可能考）。
-- 黑白版：白底黑边胶囊 + **符号**（● 课堂讲授 / ▲ 定理定义 / ■ 重点 / ◆ 可能考），不能只靠灰度。
-
-### 6.5 表格
-彩色版深蓝表头白字；黑白版纯黑表头白字。隔行浅灰。只画横线不画竖线。
-
-### 6.6 插图
-全部内联 SVG，禁止位图。彩色的按组配色；黑白的用黑线 + 灰度填充 + 斜线纹理。每图必须带图注。
+- 行内 `\(x\)`，行间 `\[ ... \]`；**所有数学符号都写 TeX**，不用半角字符拼凑。
+- 打印前必须 `await page.evaluate(() => MathJax.startup.promise)`。
+- 沙箱无外网时把 `tex-chtml.js` 与字体一起放进工作目录，改用相对路径。
 
 ---
 
 ## 七、目录页码：两遍法
 
-Chromium 不支持 `target-counter`，只能手工算：
+Chromium 不支持 `target-counter`，也没有 `page-counter` 可用，按下面做：
 
-```js
-// 第一遍：页码留空打印，或在浏览器里量
-const PAGE_H = 297 - 17 - 13;          // mm，黑白版换成 297 - 18 - 15
-const heads = [...document.querySelectorAll("h2")];
-const rows = heads.map(h => ({
-  title: h.innerText.trim(),
-  page: Math.floor(h.getBoundingClientRect().top / (PAGE_H * 3.7795)) + 1
-}));
-// 回填目录 -> 第二遍打印
+1. 第一遍打印，目录页码写占位（如 `00`）。
+2. 用 `pymupdf` 逐页 `search_for(标题文本)`，取首次出现的页码。
+3. 回填目录，第二遍打印。
+4. 抽查前 5 条与页脚「第 X / Y 页」是否一致。
+
+```python
+import pymupdf
+doc = pymupdf.open("pass1.pdf")
+pages = {}
+for i, page in enumerate(doc):
+    for h in headings:                      # headings 是 (锚点, 文本) 列表
+        if h not in pages and page.search_for(h):
+            pages[h] = i + 1
 ```
 
-注意：
-
-- 上述按 `offsetTop` 的粗算只适用于**单栏、无浮层**的线性文档；有封面色块、分页符时要按实际分页边界累加。
-- 最稳的做法是第一遍打印后，用 `pymupdf` 逐页找标题文本，得到**真实页码**，再回填第二遍。
-- 交付前抽查目录前 5 条与页脚页码，必须一致。
+> 用 `offsetTop` 估算会在有封面色块、强制分页时错位，只作第一遍的粗排。
 
 ---
 
-## 八、打印后质检（HTML 路线专用）
+## 八、黑白版
 
-| 检查 | 方法 | 合格 |
+同一套骨架，只把色相压成灰阶，**不新增任何组件**：
+
+| 彩色 | 黑白 |
+|---|---|
+| `--navy #0d1f33` | `#1a1a1a` |
+| `--gold #f0a03c` | `#000`（只作竖条） |
+| `--blue #1a4e8a` / `#e9f1fa` | `#3a3a3a` / `#ededed` |
+| `--teal #0e6673` / `#e6f4f5` | `#4a4a4a` / `#f1f1f1` |
+| `--crimson #8a1b3b` / `#fae9f0` | `#222` / `#ececec` |
+| `--amber #a75c00` / `#fdf2e3` | `#5a5a5a` / `#f3f3f3` |
+| `--slate #6a798b` / `#f4f6f9` | `#6e6e6e` / `#f5f5f5` |
+
+- 盒型改由**边框样式**区分：定理实线、板书左缘粗竖条、例题最粗、易错虚线、注释点线。
+- 页边距放宽到 `18mm 18mm 15mm 18mm`，避免大黑块压边。
+- 验收：任意页 `max(R,G,B) − min(R,G,B) > 10` 的像素占比必须为 0。
+
+---
+
+## 九、打印
+
+```js
+await page.waitForFunction(() => window.MathJax && MathJax.startup && MathJax.startup.promise);
+await page.evaluate(() => MathJax.startup.promise);
+await page.pdf({
+  path: "out.pdf", format: "A4", printBackground: true,
+  margin: {top: "18mm", bottom: "16mm", left: "16mm", right: "16mm"},
+  displayHeaderFooter: true, headerTemplate, footerTemplate,
+  preferCSSPageSize: false
+});
+```
+
+页眉模板：左「课程名 · 讲次」，右章名，下缘 0.6 pt 细线；页脚：右「第 X / Y 页」。
+无 Playwright 时用 `chromium --headless=new --no-sandbox --print-to-pdf=out.pdf --no-pdf-header-footer file:///...`，页码打印后补。
+
+---
+
+## 十、验收表（`check_pdf.py --style html-color|html-bw`）
+
+| 项 | 合格值 |
+|---|---|
+| 空白页 | 无（单页文本 < 30 字视为空白） |
+| LaTeX 泄漏 | `\(` `\[` `\frac` `\displaystyle` `$` 全为 0 |
+| 位图 | `images=0`（插图必须内联 SVG） |
+| 文字描边 | `text_strokes=0` |
+| 横向溢出 | `text_outside_page=0` |
+| 黑白版彩色 | `color_pages=[]` |
+| 目录页码 | 抽查前 5 条与页脚一致 |
+| 例题 | 数量与讲稿一致，标注「课堂讲授 / 讲义例题」 |
+| 时间戳 | `[录音]` ≥ 15 处，`[画面]` 覆盖每块板书 |
+
+---
+
+## 十一、常见事故
+
+| 症状 | 根因 | 处置 |
 |---|---|---|
-| 页数与空白页 | `pymupdf` 逐页取文本，`len(strip) < 30` 视为空白 | 无空白页 |
-| 位图 | `page.get_images()` | 全部页面 0 张位图（插图都是 SVG） |
-| 字体 | `pdffonts` | 中文与公式字体全部内嵌，无 Type3 |
-| 文字描边 | 解压内容流，统计 `BT…ET` 内的 `S` / `B` 操作符 | 0 |
-| 公式缺失 | 逐页搜索 `\(` `\[` 原文残留 | 0 |
-| 内容溢出 | 文本块 bbox 与页面边距比较 | 无越界 |
-| 黑白纯度（黑白版） | 每页渲染 RGB，统计 `max(R,G,B)-min(R,G,B) > 10` 的像素 | 0 |
-| 目录页码 | 目录条目 vs 页脚 | 一致 |
-
-`scripts/check_pdf.py --style html-color|html-bw` 已内置前六项与黑白纯度检查。
+| 底纹全白 | 没开 `printBackground` 或没写 `print-color-adjust: exact` | 两者都补上 |
+| 公式空白 / 仍是 `\[...\]` | 没等 MathJax 渲染完，或行间写成了 `$...$` | 等 `startup.promise`；行间改 `\[...\]` |
+| 公式空心、毛边 | 用了 `tex-svg.js`，或加了文字描边 | 换 CHTML，删 `text-stroke` / `text-shadow` |
+| 每页重复页眉且错位 | 用 `position: fixed` 做页眉 | 改用 Playwright `headerTemplate` |
+| 目录页码全错 | `offsetTop` 估算，遇封面/分页错位 | 改两遍法 + pymupdf 搜标题 |
+| 黑白版有彩色 | 残留彩色变量、彩色 emoji、彩色 SVG | 跑 `--style html-bw` 看 `color_pages` |
+| 内容被裁 / 右侧溢出 | `overflow:hidden`、固定高度、长公式不换行 | 删掉限制；长公式用 `aligned` 换行 |
+| 章节标题孤零零留在页底 | 章节条后没有跟正文 | `.chap { break-after: avoid }` |
 
 ---
 
-## 九、黑白版专章
+## 十二、落版自检（交付前逐条打勾）
 
-黑白版不是「把彩色版去色」，而是重新设计：
-
-1. **信息层级不能依赖颜色**：用线型（实线/双线/虚线/点线）、灰度（黑/深灰/中灰/浅灰/白）、符号（●▲■◆）三者组合。
-2. **灰度只留 4–5 档**，打印后相邻档位要能分辨；浅底不要低于 `#ebebeb`。
-3. **封面用纯黑块**，不要深灰（深灰打印发脏）。
-4. **公式保持纯黑**，不要加灰底。
-5. **SVG 填充只用灰度或斜线纹理**，禁止彩色。
-6. 交付前必须做灰度实测（见上表最后一项）。
-
----
-
-## 十、常见事故
-
-| 症状 | 原因 | 处置 |
-|---|---|---|
-| PDF 里底纹全白 | 没开 `printBackground` 或没写 `print-color-adjust: exact` | 补参数，重打 |
-| 公式位置空白 | 没等 `MathJax.startup.promise` | 等待后重打 |
-| 公式放大后是空心轮廓 | 用了 `tex-svg.js` 或给文字加了描边 | 换 CHTML，删 `-webkit-text-stroke` |
-| 每页页眉重复错位 | 用 `position: fixed` 做页眉 | 改用 Playwright headerTemplate |
-| 目录页码全错 | 用了 `offsetTop` 粗算但文档有分页符 | 第一遍打印后用 pymupdf 回填 |
-| 内容被裁掉 | `body` 设了 `overflow: hidden` 或固定高度 | 删掉 |
-| 黑白版打印发灰、层次糊 | 灰度档位太密 | 减到 4 档，加深对比 |
-| 中文变方框 | 字体栈里的字体沙箱没有 | `fc-list :lang=zh` 后换字体 |
+- [ ] 与 `reference_lecture_style.html` 同款：深蓝封面 + 金色小标 + 五色盒子
+- [ ] 页数、例题、时间戳三项与讲稿对得上
+- [ ] 所有公式是 MathJax TeX，PDF 里搜不到 `\frac`
+- [ ] 插图全内联 SVG，数据与正文一致
+- [ ] 目录页码与页脚一致
+- [ ] `check_pdf.py` 全绿

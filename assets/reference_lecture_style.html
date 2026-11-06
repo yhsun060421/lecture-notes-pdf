@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<!--
+  课程讲义 · 彩色 A4 打印版 · 官方样式样板（reference_lecture_style.html）
+  ------------------------------------------------------------------
+  用途：提交 Tabbit 时作为「样式与结构参考」附件随提示词一起上传。
+  读法：本文件只示范排版系统，不含任何真实课程内容；生成讲义时必须
+        1) 复制 <style> 里的全部变量与组件定义；
+        2) 保持封面 / 目录 / 章节条 / 盒子 / 表格 / 插图 / 时间戳的用法一致；
+        3) 只替换正文，不得改配色、字号、留白。
+  技术路线：纯 HTML + CSS + MathJax 3（TeX 输入、CHTML 输出），
+            由 Chromium/Playwright page.pdf({format:"A4", printBackground:true}) 打印。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>课程讲义 · 样式样板</title>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true,
+    tags: 'none'
+  },
+  chtml: { scale: 1.0, mtextInheritFont: true },
+  options: { enableMenu: false, skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+<style>
+:root{
+  /* —— 主色：深海军蓝封面 + 金色点缀 —— */
+  --navy:#0d1f33;  --navy2:#142d48;  --gold:#f0a03c;  --gold-l:#f5bf6a;
+  /* —— 五类盒子的强调色与底色 —— */
+  --blue:#1a4e8a;    --blue-bg:#e9f1fa;
+  --teal:#0e6673;    --teal-bg:#e6f4f5;
+  --crimson:#8a1b3b; --crimson-bg:#fae9f0;
+  --amber:#a75c00;   --amber-bg:#fdf2e3;
+  --slate:#6a798b;   --slate-bg:#f4f6f9;
+  /* —— 文字与线条 —— */
+  --ink:#111; --mid:#3a434e; --soft:#66707c; --hair:#d8dde3;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#fff;color:var(--ink);}
+body{
+  font-family:"Source Han Serif SC","Noto Serif SC","Songti SC","SimSun",serif;
+  font-size:10.4pt; line-height:1.74; text-align:justify; font-kerning:normal;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+h1,h2,h3,h4,.sans{font-family:"Source Han Sans SC","Noto Sans SC","Microsoft YaHei","SimHei",sans-serif;}
+h1,h2,h3,h4{margin:0;color:var(--ink);break-after:avoid;page-break-after:avoid;}
+p{margin:0 0 2.2mm;}
+ul,ol{margin:1.4mm 0 2.4mm;padding-left:6mm;}
+li{margin:0.7mm 0;}
+strong{font-weight:700;}
+.avoid{break-inside:avoid;page-break-inside:avoid;}
+.muted{color:var(--soft);}
+.small{font-size:9pt;line-height:1.62;}
+.tiny{font-size:8.2pt;line-height:1.5;}
+
+@page{size:A4;margin:18mm 16mm 16mm 16mm;}
+
+/* ============ 封面 ============ */
+.cover{height:262mm;display:flex;flex-direction:column;justify-content:space-between;
+  break-after:page;page-break-after:always;}
+.cover-hero{background:var(--navy);color:#fff;padding:14mm 14mm 12mm;position:relative;}
+.cover-hero::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3.2mm;background:var(--gold);}
+.cover-kicker{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:9.2pt;letter-spacing:.34em;color:var(--gold-l);margin-bottom:11mm;}
+.cover-title{font-size:40pt;line-height:1.14;letter-spacing:.05em;font-weight:700;color:#fff;}
+.cover-lesson{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:22pt;letter-spacing:.16em;font-weight:600;color:var(--gold);margin-top:6mm;}
+.cover-sub{font-size:12pt;letter-spacing:.04em;color:#dfe6ee;margin-top:5mm;}
+.cover-rule{height:1px;background:rgba(255,255,255,.35);margin:9mm 0 0;}
+.cover-body{padding:0 2mm;}
+.meta{width:100%;border-collapse:collapse;font-size:9.6pt;margin:0 0 6mm;}
+.meta th{width:26mm;text-align:left;font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-weight:600;color:var(--navy);letter-spacing:.06em;padding:2.1mm 3mm 2.1mm 0;
+  border-bottom:0.7px solid var(--hair);vertical-align:top;white-space:nowrap;}
+.meta td{padding:2.1mm 0;border-bottom:0.7px solid var(--hair);color:var(--mid);}
+.legend{border:1px solid var(--hair);border-left:3mm solid var(--navy);padding:4mm 5mm;background:#fcfdfe;}
+.legend .t{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;font-size:9pt;
+  letter-spacing:.18em;color:var(--navy);margin-bottom:2.5mm;}
+.legend .row{display:grid;grid-template-columns:1fr 1fr;gap:2.4mm 6mm;font-size:9pt;color:var(--mid);}
+.legend .item{display:flex;align-items:center;gap:2mm;white-space:nowrap;}
+.cover-foot{border-top:2px solid var(--navy);padding-top:3mm;display:flex;
+  justify-content:space-between;align-items:flex-end;font-size:8.6pt;color:var(--soft);}
+.cover-foot .r{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;letter-spacing:.12em;}
+
+/* ============ 目录 ============ */
+.toc h1{font-size:20pt;letter-spacing:.1em;margin:0 0 6mm;padding-bottom:3mm;
+  border-bottom:2.5px solid var(--navy);color:var(--navy);}
+.toc ol{list-style:none;padding:0;margin:0;}
+.toc li{display:flex;align-items:baseline;gap:2mm;margin:0 0 2.2mm;}
+.toc .n{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;font-size:9pt;
+  color:var(--gold);font-weight:700;min-width:11mm;}
+.toc .t{flex:0 1 auto;}
+.toc .dots{flex:1 1 auto;border-bottom:1px dotted #b9c2cc;transform:translateY(-1mm);}
+.toc .p{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;font-size:9.2pt;color:var(--navy);}
+.toc li.sub{margin:0 0 1.4mm 11mm;}
+.toc li.sub .n{color:var(--soft);font-weight:400;min-width:9mm;}
+.toc li.sub .t{font-size:9.6pt;color:var(--mid);}
+
+/* ============ 章节条 ============ */
+.chap{margin:7mm 0 5mm;padding:3.2mm 5mm;background:var(--navy);color:#fff;
+  border-left:3.2mm solid var(--gold);break-after:avoid;page-break-after:avoid;}
+.chap .k{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;font-size:8pt;
+  letter-spacing:.3em;color:var(--gold-l);margin-bottom:1.2mm;}
+.chap .h{font-size:19pt;letter-spacing:.06em;font-weight:700;color:#fff;}
+.chap .h .sec{font-size:10pt;font-weight:400;color:#cfd9e4;letter-spacing:.04em;margin-left:3mm;}
+
+/* ============ 标题 ============ */
+h2{font-size:14.4pt;color:var(--navy);margin:7mm 0 3mm;padding-left:3.4mm;
+  border-left:2.2mm solid var(--gold);line-height:1.34;}
+h2 .no{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;font-size:9.4pt;
+  color:var(--soft);letter-spacing:.1em;margin-right:2.4mm;}
+h3{font-size:11.8pt;color:var(--ink);margin:5mm 0 2mm;padding-bottom:1.2mm;
+  border-bottom:0.8px solid var(--hair);}
+.lead{font-size:10.8pt;color:var(--mid);margin:0 0 4mm;}
+
+/* ============ 盒子系统（核心） ============ */
+.box{margin:4mm 0 0;border:0.8px solid var(--accent);border-top:0;background:var(--tint);
+  break-inside:avoid;page-break-inside:avoid;}
+.box > .bh{display:flex;justify-content:space-between;align-items:center;gap:3mm;
+  margin:0 0 0;padding:1.8mm 4mm;background:var(--accent);color:#fff;
+  border-left:3mm solid rgba(255,255,255,.42);}
+.box > .bh .l{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:8.6pt;letter-spacing:.18em;font-weight:600;}
+.box > .bh .r{font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:7.8pt;letter-spacing:.08em;color:rgba(255,255,255,.86);}
+.box > .bb{padding:3.4mm 4.4mm 3.2mm;}
+.box.thm  {--accent:var(--blue);    --tint:var(--blue-bg);}
+.box.board{--accent:var(--teal);    --tint:var(--teal-bg);}
+.box.exam {--accent:var(--crimson); --tint:var(--crimson-bg);}
+.box.warn {--accent:var(--amber);   --tint:var(--amber-bg);}
+.box.note {--accent:var(--slate);   --tint:var(--slate-bg);}
+.box.plain{--accent:var(--navy);    --tint:#fff;border-top:0.8px solid var(--accent);}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0;}
+
+/* ============ 标签 ============ */
+.tag{display:inline-block;font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:7.8pt;letter-spacing:.1em;padding:0.5mm 2mm;margin-right:1.6mm;
+  border:0.7px solid var(--slate);color:var(--mid);background:#fff;white-space:nowrap;}
+.tag.navy{background:var(--navy);border-color:var(--navy);color:#fff;}
+.tag.gold{background:var(--gold);border-color:var(--gold);color:#3a2400;}
+.tag.crimson{background:var(--crimson);border-color:var(--crimson);color:#fff;}
+.tag.blue{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+/* ============ 引语与时间戳 ============ */
+.quote{margin:3mm 0;padding:2.6mm 4mm 2.6mm 4.4mm;border-left:3px solid var(--gold);
+  background:#fffaef;color:var(--mid);}
+.ts{font-family:"Source Han Sans SC","Consolas",monospace;font-size:8.4pt;color:var(--blue);
+  letter-spacing:.02em;white-space:nowrap;}
+.ts.frame{color:var(--teal);}
+
+/* ============ 表格 ============ */
+table.t{width:100%;border-collapse:collapse;font-size:9.4pt;margin:3mm 0 4mm;
+  break-inside:avoid;page-break-inside:avoid;}
+table.t caption{caption-side:top;text-align:left;font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-size:8.6pt;letter-spacing:.12em;color:var(--navy);padding-bottom:1.6mm;}
+table.t th{background:var(--navy);color:#fff;font-family:"Source Han Sans SC","Microsoft YaHei",sans-serif;
+  font-weight:600;font-size:9.2pt;letter-spacing:.04em;padding:2mm 3mm;text-align:left;}
+table.t td{padding:1.9mm 3mm;border-bottom:0.6px solid var(--hair);vertical-align:top;}
+table.t tbody tr:nth-child(even) td{background:#f7f9fb;}
+table.t td.c,table.t th.c{text-align:center;}
+
+/* ============ 插图 ============ */
+figure{margin:4mm 0;break-inside:avoid;page-break-inside:avoid;text-align:center;}
+figure svg{max-width:100%;height:auto;}
+figcaption{margin-top:1.8mm;font-size:8.4pt;color:var(--soft);text-align:center;}
+figcaption b{color:var(--navy);font-weight:600;}
+
+/* ============ 页脚说明 ============ */
+.note-line{margin-top:4mm;padding-top:2mm;border-top:0.6px solid var(--hair);
+  font-size:8.2pt;color:var(--soft);}
+</style>
+</head>
+<body>
+
+<!-- ==================== 封面 ==================== -->
+<section class="cover">
+  <div class="cover-hero">
+    <div class="cover-kicker">L E C T U R E &nbsp; N O T E S &nbsp; · &nbsp; 2 0 2 5</div>
+    <h1 class="cover-title">（课程名称）</h1>
+    <div class="cover-lesson">第 X 次课</div>
+    <div class="cover-sub">（本节主线 A）·（本节主线 B）·（本节主线 C）</div>
+    <div class="cover-rule"></div>
+  </div>
+
+  <div class="cover-body">
+    <table class="meta">
+      <tr><th>课程名称</th><td>（课程名称）</td></tr>
+      <tr><th>课　　次</th><td>第 X 次课（第 X 周 · 周 X 第 X–X 节）</td></tr>
+      <tr><th>授 课 人</th><td>（授课教师）</td></tr>
+      <tr><th>教材范围</th><td>（章 §.. —§..）</td></tr>
+      <tr><th>素材来源</th><td>课堂录音转写稿（1:50:03，共 306 段）＋ 课堂录像关键帧</td></tr>
+      <tr><th>输出格式</th><td>A4 彩色 PDF（HTML + CSS + MathJax，插图全部为内联 SVG）</td></tr>
+    </table>
+
+    <div class="legend">
+      <div class="t">标 注 体 系</div>
+      <div class="row">
+        <span class="item"><span class="tag blue">定义 · 定理</span>必须能准确复述的结论</span>
+        <span class="item"><span class="tag navy">课堂讲授</span>老师课上讲过、推导过</span>
+        <span class="item"><span class="tag gold">重点</span>老师反复强调的关键处</span>
+        <span class="item"><span class="tag crimson">可能考</span>明示或暗示的考点</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-foot">
+    <div>本讲义由课堂录音与录像双重核对整理<br>术语以板书为准，语音稿仅作底本</div>
+    <div class="r">X / X X &nbsp;·&nbsp; 讲义</div>
+  </div>
+</section>
+
+<!-- ==================== 目录 ==================== -->
+<section class="toc">
+  <h1>目　　录</h1>
+  <ol>
+    <li><span class="n">第 1 节</span><span class="t">（一级标题）</span><span class="dots"></span><span class="p">3</span></li>
+    <li class="sub"><span class="n">1.1</span><span class="t">（二级标题）</span><span class="dots"></span><span class="p">3</span></li>
+    <li class="sub"><span class="n">1.2</span><span class="t">（二级标题）</span><span class="dots"></span><span class="p">5</span></li>
+    <li><span class="n">第 2 节</span><span class="t">（一级标题）</span><span class="dots"></span><span class="p">7</span></li>
+    <li class="sub"><span class="n">2.1</span><span class="t">（二级标题）</span><span class="dots"></span><span class="p">7</span></li>
+  </ol>
+</section>
+
+<!-- ==================== 正文样例 ==================== -->
+<div class="chap">
+  <div class="k">C H A P T E R &nbsp; 0 1</div>
+  <div class="h">（章标题）<span class="sec">§（教材节号）</span></div>
+</div>
+
+<p class="lead">（导语：用两三句话说清本节要解决什么问题、与上一节的关系，以及学完应该会做什么。）</p>
+
+<h2><span class="no">1.1</span>（小节标题）</h2>
+
+<p>行内公式写成 \(f(x)=\sum_{k=1}^{n}a_k\varphi_k(x)\)，行间公式单独成段：</p>
+
+\[
+  \min_{x\in\mathbb{R}^n}\; f(x)\quad\text{s.t.}\quad g_i(x)\le 0,\; i=1,\dots,m .
+\]
+
+<div class="box thm">
+  <div class="bh"><span class="l">定 理 1.1&nbsp;&nbsp;（定理名）</span><span class="r">定理 · 定义</span></div>
+  <div class="bb">
+    <p>（定理陈述，条件与结论写全。下标、上标、分式一律用 TeX，不要用字符拼接。）</p>
+    <p>\[ \|x+y\|^2+\|x-y\|^2=2\|x\|^2+2\|y\|^2 . \]</p>
+  </div>
+</div>
+
+<div class="box board">
+  <div class="bh"><span class="l">板 书（画面 24:40）</span><span class="r">板书 · 关键帧</span></div>
+  <div class="bb">
+    <p>（这里写黑板上真实出现的推导步骤，逐行照抄板书，不要改写符号。）</p>
+  </div>
+</div>
+
+<div class="box exam">
+  <div class="bh"><span class="l">例 1.2&nbsp;&nbsp;（课堂讲授）</span><span class="r">例题 · 课堂</span></div>
+  <div class="bb">
+    <p><b>题目.</b>（完整题干，含全部已知数据。）</p>
+    <p><b>解.</b> 分步推导，最后给出结论 \(\boxed{\;x^\ast=(1,2)^{\mathsf T}\;}\)。</p>
+    <p class="small muted">方法小结：先化简约束，再代回目标函数，避免直接解高次方程。</p>
+  </div>
+</div>
+
+<div class="box warn">
+  <div class="bh"><span class="l">易 错 点</span><span class="r">重点</span></div>
+  <div class="bb">
+    <p>（写清最常见的错误做法，以及为什么错；给出正确写法对照。）</p>
+  </div>
+</div>
+
+<div class="box note">
+  <div class="bh"><span class="l">注&nbsp;&nbsp;（补充说明）</span><span class="r">整理说明</span></div>
+  <div class="bb">
+    <p>（来源核对、术语勘误、与板书冲突时的取舍依据。）</p>
+  </div>
+</div>
+
+<h3>1.2 （三级标题）</h3>
+
+<div class="quote">
+  “（老师原话，逐字引用，术语按板书规范化。）”<span class="ts">[录音 12:34]</span>
+</div>
+
+<table class="t">
+  <caption>表 1-1&nbsp;&nbsp;（表格标题）</caption>
+  <thead><tr><th>项目</th><th>符号</th><th class="c">数值</th></tr></thead>
+  <tbody>
+    <tr><td>（行一）</td><td>\(a_{ij}\)</td><td class="c">0.5</td></tr>
+    <tr><td>（行二）</td><td>\(\lambda_{\max}\)</td><td class="c">3.2</td></tr>
+  </tbody>
+</table>
+
+<figure>
+  <svg viewBox="0 0 420 170" width="420" height="170" role="img" aria-label="示意图">
+    <defs>
+      <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="#1a4e8a"/>
+      </marker>
+    </defs>
+    <!-- 边 -->
+    <line x1="70" y1="95" x2="200" y2="60" stroke="#1a4e8a" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="200" y1="60" x2="340" y2="95" stroke="#1a4e8a" stroke-width="1.6" marker-end="url(#ar)"/>
+    <line x1="70" y1="95" x2="340" y2="95" stroke="#f0a03c" stroke-width="2.2"/>
+    <line x1="200" y1="60" x2="200" y2="140" stroke="#0e6673" stroke-width="1.6" stroke-dasharray="5 4"/>
+    <!-- 顶点 -->
+    <circle cx="70" cy="95" r="15" fill="#fff" stroke="#0d1f33" stroke-width="1.8"/>
+    <circle cx="200" cy="60" r="15" fill="#fff" stroke="#0d1f33" stroke-width="1.8"/>
+    <circle cx="340" cy="95" r="15" fill="#fff" stroke="#0d1f33" stroke-width="1.8"/>
+    <circle cx="200" cy="140" r="15" fill="#fff" stroke="#0d1f33" stroke-width="1.8"/>
+    <text x="70" y="100" font-size="14" text-anchor="middle" fill="#111">v₁</text>
+    <text x="200" y="65" font-size="14" text-anchor="middle" fill="#111">v₂</text>
+    <text x="340" y="100" font-size="14" text-anchor="middle" fill="#111">v₃</text>
+    <text x="200" y="145" font-size="14" text-anchor="middle" fill="#111">v₄</text>
+    <!-- 标注 -->
+    <text x="135" y="68" font-size="12" fill="#1a4e8a">\(w_{12}\)</text>
+    <text x="262" y="68" font-size="12" fill="#1a4e8a">\(w_{23}\)</text>
+    <text x="140" y="112" font-size="12" fill="#a75c00" text-anchor="middle">已选边</text>
+    <text x="258" y="166" font-size="12" fill="#0e6673">候选边</text>
+  </svg>
+  <figcaption><b>图 1-1</b>（图题：必须与正文数据一致，顶点、方向、权值都不能省。）</figcaption>
+</figure>
+
+<div class="note-line">
+  标注约定：「[录音 mm:ss]」为课堂录音时间轴，「[画面 mm:ss]」为录像时间轴；两者不一致时以录像为准。
+</div>
+
+</body>
+</html>

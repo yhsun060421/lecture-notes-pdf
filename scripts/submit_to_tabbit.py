@@ -9,12 +9,16 @@
         --txt "语音文字稿_清洗\\第8周周二.txt" \
         --video "C:\\Users\\你\\Videos\\课程合并\\数据科学与工程数学基础-第8周周二.mp4" \
         --style html-color \
+        [--ref assets/reference_lecture_style.html] \
         [--task 课程讲义] [--video-title 自定义视频标题] [--out-name 输出文件名]
 
 --style 三选一（对应 scripts/ 下三份提示词）：
     latex       LaTeX 排版（xelatex -> PDF）
     html-color  彩色 HTML 排版（Chromium 打印 A4 彩色 PDF）
     html-bw     黑白 HTML 排版（Chromium 打印 A4 黑白 PDF）
+
+html-color / html-bw 会自动把 assets/reference_lecture_style.html 作为
+「样式参考」随语音稿一起上传；这一步是强制的，不传样板就没有统一版式。
 
 三步：
     1) 新开 newtab -> 任务模式 -> 添加引用 -> 上传 txt
@@ -44,6 +48,7 @@ PROMPTS = {
 
 JS_STEP1 = r"""const LESSON = __LESSON__;
 const TXT = __TXT__;
+const REFS = __REFS__;
 const p = await context.newPage();
 await p.goto("https://web.tabbit.com/newtab", {waitUntil: "domcontentloaded", timeout: 40000});
 await p.waitForFunction(() => !!document.querySelector("button[aria-label='选择输入模式']"), null, {timeout: 45000});
@@ -67,15 +72,29 @@ try {
   await p.getByText("生成文件、操作网页和长程任务。", {exact: false}).first().click({timeout: 12000});
 }
 await p.waitForTimeout(2000);
-await p.locator("button[aria-label='添加引用内容']").click({timeout: 15000});
-await p.waitForTimeout(1800);
-const fcWait = p.waitForEvent("filechooser", {timeout: 12000}).catch(() => null);
-await p.getByText("上传本地文件", {exact: true}).first().click({timeout: 10000});
-const fc = await fcWait;
-if (fc) await fc.setFiles(TXT);
-await p.waitForTimeout(5000);
-const body = await p.evaluate(() => (document.body.innerText || "").slice(0, 400));
-return {url: p.url(), uploaded: !!fc, hasTxt: body.includes(LESSON + ".txt"), body};
+
+// 一次上传：语音稿 + 所有参考文件；缺哪个补哪个
+async function uploadOne(files) {
+  await p.locator("button[aria-label='添加引用内容']").click({timeout: 15000});
+  await p.waitForTimeout(1600);
+  const w = p.waitForEvent("filechooser", {timeout: 12000}).catch(() => null);
+  await p.getByText("上传本地文件", {exact: true}).first().click({timeout: 10000});
+  const fc = await w;
+  if (fc) await fc.setFiles(files);
+  await p.waitForTimeout(5000);
+  return !!fc;
+}
+
+const base = f => f.replace(/\\/g, "/").split("/").pop();
+const first = await uploadOne([TXT].concat(REFS));
+let body = await p.evaluate(() => (document.body.innerText || "").slice(0, 1500));
+const missing = REFS.filter(f => !body.includes(base(f)));
+for (const one of missing) {
+  await uploadOne([one]);
+  body = await p.evaluate(() => (document.body.innerText || "").slice(0, 1500));
+}
+return {url: p.url(), uploaded: first, hasTxt: body.includes(LESSON + ".txt"),
+        refs: REFS.map(f => [base(f), body.includes(base(f))]), body};
 """
 
 JS_STEP2 = r"""const LESSON = __LESSON__;
@@ -194,6 +213,8 @@ def main() -> None:
     ap.add_argument("--style", default="latex", choices=sorted(PROMPTS),
                     help="排版风格：latex / html-color / html-bw")
     ap.add_argument("--prompt", default="", help="自定义提示词路径（覆盖 --style）")
+    ap.add_argument("--ref", action="append", default=[],
+                    help="随任务上传的参考文件（可重复）。html 排版默认自动带 assets/reference_lecture_style.html")
     ap.add_argument("--out-name", default="", help="交付 PDF 文件名，默认 <课程>_<讲次>.pdf")
     ap.add_argument("--task", default="课程讲义")
     ap.add_argument("--video-title", default="", help="引用区显示的视频标题，默认取视频文件名")
@@ -212,12 +233,27 @@ def main() -> None:
     prompt_path = args.prompt or os.path.join(HERE, PROMPTS[args.style])
     prompt = fill_prompt(open(prompt_path, encoding="utf-8").read().strip(),
                          args.course, lesson, args.sections, video_name, out_name, txt_name)
+
+    # 参考文件：html 排版必须带上官方样式样板
+    refs = [os.path.abspath(p) for p in args.ref]
+    if args.style.startswith("html"):
+        sample = os.path.join(HERE, "..", "assets", "reference_lecture_style.html")
+        sample = os.path.abspath(sample)
+        if not refs:
+            if not os.path.exists(sample):
+                raise SystemExit(f"找不到样式样板：{sample}")
+            refs = [sample]
+    for r in refs:
+        if not os.path.exists(r):
+            raise SystemExit(f"参考文件不存在：{r}")
+
     b64 = base64.b64encode(prompt.encode("utf-8")).decode("ascii")
     tag = time.strftime("%m%d%H%M")
     slug = re.sub(r"[^0-9A-Za-z\u4e00-\u9fff]+", "", lesson)[-12:] or "lesson"
 
     js1 = JS_STEP1.replace("__LESSON__", json.dumps(lesson, ensure_ascii=False)).replace(
-        "__TXT__", json.dumps(txt, ensure_ascii=False))
+        "__TXT__", json.dumps(txt, ensure_ascii=False)).replace(
+        "__REFS__", json.dumps(refs, ensure_ascii=False))
     r1 = run_js("1", js1, args.task, f"st1-{slug}-{tag}", 120000)
     print("STEP1", json.dumps(r1.get("result", {}).get("value", r1), ensure_ascii=False)[:500])
 
